@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Easing,
 } from 'react-native';
+import { theme } from '../theme';
 
 interface LoadingIndicatorProps {
   size?: number;
@@ -13,7 +14,7 @@ interface LoadingIndicatorProps {
 
 export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
   size = 24,
-  color = '#E65100',
+  color = theme.colors.primary,
 }) => {
   const dots = [useRef(new Animated.Value(0)), useRef(new Animated.Value(0)), useRef(new Animated.Value(0))];
 

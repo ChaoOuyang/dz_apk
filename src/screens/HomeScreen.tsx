@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { CozeApi, HistoryMessage } from '../api/CozeApi';
 import { LoadingIndicator } from '../components/LoadingIndicator';
+import { theme } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -313,7 +314,7 @@ const HomeScreen = () => {
                 <TextInput
                     style={styles.input}
                     placeholder="发消息..."
-                    placeholderTextColor="#999"
+                    placeholderTextColor={theme.colors.inputPlaceholder}
                     value={inputText}
                     onChangeText={setInputText}
                     onSubmitEditing={() => sendMessage(inputText)}
@@ -337,23 +338,23 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
+    fontFamily: theme.typography.fontFamily,
   },
   header: {
-    height: 50,
+    height: theme.spacing.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 0,
     elevation: 0,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
     marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    ...theme.typography.title,
+    color: theme.colors.text.primary,
     flex: 1,
     textAlign: 'center',
   },
@@ -361,13 +362,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: theme.colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   newTopicIcon: {
     fontSize: 18,
-    color: '#E65100',
+    color: theme.colors.primary,
     fontWeight: 'bold',
   },
   contentContainer: {
@@ -375,116 +376,102 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   scrollContent: {
-    paddingBottom: 120, // Space for input area
+    paddingBottom: 120,
   },
   centerContent: {
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.lg,
     paddingTop: 100,
   },
   logoContainer: {
     width: 80,
     height: 80,
-    backgroundColor: '#E8F0FE', // Light blue background
+    backgroundColor: '#E8F0FE',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...theme.shadows.medium,
   },
   logoIcon: {
     fontSize: 40,
-    color: '#000', // Or a dark blue if preferred
+    color: theme.colors.text.primary,
   },
   mainTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#E65100', // Orange color
-    marginBottom: 16,
+    ...theme.typography.h1,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.md,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    ...theme.typography.body,
+    color: theme.colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 24,
     marginBottom: 40,
-    paddingHorizontal: 10,
+    paddingHorizontal: theme.spacing.sm,
   },
   suggestionsContainer: {
     width: '100%',
-    gap: 12,
+    gap: theme.spacing.md,
   },
   suggestionButton: {
-    backgroundColor: '#F5F5F5',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    backgroundColor: theme.colors.backgroundSecondary,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.radius.lg,
     width: '100%',
   },
   suggestionText: {
-    fontSize: 16,
-    color: '#333',
+    ...theme.typography.body,
+    color: theme.colors.text.primary,
   },
   bottomArea: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
     borderTopWidth: 0,
   },
   actionButtonsRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
     flexDirection: 'row',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
   actionButtonIcon: {
     fontSize: 16,
-    marginRight: 6,
-    color: '#000',
+    marginRight: theme.spacing.sm,
+    color: theme.colors.text.primary,
   },
   actionButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000',
+    ...theme.typography.bodySmallSemiBold,
+    color: theme.colors.text.primary,
   },
   inputRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
   },
   inputContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.inputBackground,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#ddd',
-    height: 48,
+    borderColor: theme.colors.inputBorder,
+    height: theme.spacing.inputHeight,
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    marginRight: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    paddingHorizontal: theme.spacing.lg,
+    marginRight: theme.spacing.md,
+    ...theme.shadows.light,
   },
   input: {
-    fontSize: 16,
-    color: '#000',
+    ...theme.typography.body,
+    color: theme.colors.inputText,
   },
   sendButton: {
     width: 40,
@@ -499,13 +486,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   chatListContent: {
-      paddingHorizontal: 16,
-      paddingBottom: 20,
-      paddingTop: 10,
+      paddingHorizontal: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+      paddingTop: theme.spacing.sm,
   },
   messageRow: {
       flexDirection: 'row',
-      marginBottom: 16,
+      marginBottom: theme.spacing.lg,
       alignItems: 'flex-start',
   },
   messageRowUser: {
@@ -516,26 +503,25 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
       maxWidth: '80%',
-      padding: 12,
-      borderRadius: 16,
+      padding: theme.spacing.md,
+      borderRadius: theme.radius.bubble,
   },
   userBubble: {
-      backgroundColor: '#E65100',
+      backgroundColor: theme.colors.messageBubbleUser,
       borderTopRightRadius: 4,
   },
   botBubble: {
-      backgroundColor: '#F5F5F5',
+      backgroundColor: theme.colors.messageBubbleBot,
       borderTopLeftRadius: 4,
   },
   messageText: {
-      fontSize: 16,
-      lineHeight: 22,
+    ...theme.typography.body,
   },
   userMessageText: {
-      color: '#fff',
+      color: theme.colors.messageBubbleUserText,
   },
   botMessageText: {
-      color: '#333',
+      color: theme.colors.messageBubbleBotText,
   },
 });
 

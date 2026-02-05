@@ -13,6 +13,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import GroupScreen from './src/screens/GroupScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import TabIcon from './src/components/TabIcon';
+import { theme } from './src/theme';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -70,18 +71,19 @@ function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
+    fontFamily: theme.typography.fontFamily,
   },
   content: {
     flex: 1,
   },
   tabBar: {
     flexDirection: 'row',
-    height: 60, // Standard tab bar height
+    height: theme.spacing.tabBarHeight,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
-    paddingBottom: 5, // Safe area padding adjustment if needed
+    borderTopColor: theme.colors.tabBarBorder,
+    backgroundColor: theme.colors.tabBarBackground,
+    paddingBottom: 5,
     alignItems: 'center',
     justifyContent: 'space-around',
   },
@@ -92,12 +94,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tabLabel: {
-    fontSize: 10,
-    color: '#999',
-    fontWeight: '500',
+    ...theme.typography.labelSmall,
+    color: theme.colors.tabBarIconInactive,
   },
   activeTabText: {
-    color: '#ff7041', // Theme color
+    color: theme.colors.primary,
   },
 });
 

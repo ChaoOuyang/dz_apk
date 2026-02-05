@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { theme } from '../theme';
 
 interface TabIconProps {
   type: 'home' | 'group' | 'profile';
@@ -7,8 +8,8 @@ interface TabIconProps {
   size?: number;
 }
 
-const THEME_COLOR = '#ff7041';
-const INACTIVE_COLOR = '#999999';
+const THEME_COLOR = theme.colors.primary;
+const INACTIVE_COLOR = theme.colors.tabBarIconInactive;
 
 /**
  * 精细简约风格的Tab Icon组件

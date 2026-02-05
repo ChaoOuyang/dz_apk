@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { theme } from '../theme';
 
 const ProfileScreen = () => {
   return (
@@ -16,27 +17,27 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
+    fontFamily: theme.typography.fontFamily,
   },
   header: {
-    height: 50,
+    height: theme.spacing.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 0,
     elevation: 0,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
     marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    ...theme.typography.title,
+    color: theme.colors.text.primary,
   },
   text: {
-    fontSize: 20,
-    color: '#333',
+    ...theme.typography.h2,
+    color: theme.colors.text.primary,
   },
 });
 
