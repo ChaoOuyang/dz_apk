@@ -86,7 +86,8 @@ export class CozeApi {
     const requestBody = {
       bot_id: BOT_ID,
       user_id: userId,
-      stream: true
+      stream: true,
+      additional_messages: messages
     };
 
     let lastReadIndex = 0;
@@ -166,7 +167,12 @@ function processChunk(
         if (line.startsWith('event:')) {
             currentEvent = line.substring(6).trim();
         } else if (line.startsWith('data:')) {
-            dataBuffer += line.substring(5).trim();
+            const dataContent = line.substring(5).trim();
+            if (dataBuffer && dataContent) {
+                dataBuffer += dataContent;
+            } else if (dataContent) {
+                dataBuffer = dataContent;
+            }
         }
     }
 }
@@ -188,31 +194,23 @@ function handleSseMessage(
             updateState(json.conversation_id);
         }
 
-        if (event === 'conversation.message.completed') {
-             if (json.type === 'answer' && json.content) {
-                 // It seems completed returns the full content?
-                 // Kotlin code: if ("conversation.message.completed" == eventType) ... extract full reply?
-                 // Actually Kotlin logic accumulates `fullReply`.
-                 // Let's check `conversation.message.delta` for streaming content.
-             }
-             // Extract outputMap/subIntent
-             if (json.outputMap) updateState(undefined, undefined, JSON.stringify(json.outputMap));
-             if (json.subIntent) updateState(undefined, undefined, undefined, json.subIntent);
-        }
-        
         if (event === 'conversation.message.delta') {
+            // Handle streaming message content
             if (json.content) {
                 callback.onEvent(event, json.content);
                 updateState(undefined, json.content);
             }
         } else if (event === 'conversation.message.completed') {
-             // If we rely on delta for streaming, completed might just be a signal or contain final structured data.
-             // Kotlin code seems to extract "content" from "conversation.message.completed" as well?
-             // "if (jsonObject.has("content")) { var content = ... }"
-             // Let's trust delta for text updates.
+             // Handle completed message - may contain final full content
+             if (json.type === 'answer' && json.content) {
+                 updateState(undefined, json.content);
+             }
+             // Extract outputMap/subIntent
+             if (json.outputMap) updateState(undefined, undefined, JSON.stringify(json.outputMap));
+             if (json.subIntent) updateState(undefined, undefined, undefined, json.subIntent);
         }
 
     } catch (e) {
-        // ignore
+        console.error('[CozeApi] Error parsing message:', e, 'data:', data);
     }
 }

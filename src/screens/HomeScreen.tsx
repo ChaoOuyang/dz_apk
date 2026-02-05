@@ -12,8 +12,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { CozeApi, HistoryMessage } from '../api/CozeApi';
+import { LoadingIndicator } from '../components/LoadingIndicator';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +27,51 @@ interface Message {
   isLoading?: boolean;
 }
 
+const getDisplayContent = (text: string) => {
+  if (!text) return '';
+  try {
+    const json = JSON.parse(text);
+    if (json.content) {
+      return json.content;
+    }
+  } catch (e) {
+    // Ignore
+  }
+
+  const pattern = '{"content":"';
+  if (text.startsWith(pattern)) {
+    const contentPart = text.substring(pattern.length);
+    let result = '';
+    let escaped = false;
+    for (let i = 0; i < contentPart.length; i++) {
+      const char = contentPart[i];
+      if (escaped) {
+        result += char;
+        escaped = false;
+      } else {
+        if (char === '\\') {
+          escaped = true;
+          result += char;
+        } else if (char === '"') {
+          break;
+        } else {
+          result += char;
+        }
+      }
+    }
+    try {
+      let safeResult = result;
+      if (safeResult.endsWith('\\')) {
+        safeResult = safeResult.slice(0, -1);
+      }
+      return JSON.parse(`"${safeResult}"`);
+    } catch (e) {
+      return result;
+    }
+  }
+  return text;
+};
+
 const HomeScreen = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -32,6 +80,14 @@ const HomeScreen = () => {
   const flatListRef = useRef<FlatList>(null);
 
   const userId = "user_" + Math.floor(Math.random() * 1000000);
+
+  const startNewTopic = () => {
+    // Reset all state to start a new conversation
+    setMessages([]);
+    setInputText('');
+    setConversationId(undefined);
+    setIsSending(false);
+  };
 
   const sendMessage = (text: string) => {
     if (!text.trim() || isSending) return;
@@ -51,7 +107,7 @@ const HomeScreen = () => {
     // Ideally we should map `messages` to `HistoryMessage[]`.
     const history: HistoryMessage[] = messages.map(m => ({
         role: m.isUser ? 'user' : 'assistant',
-        type: 'answer', // simplified
+        type: m.isUser ? 'question' : 'answer',
         contentType: 'text',
         content: m.text
     }));
@@ -72,6 +128,7 @@ const HomeScreen = () => {
       history,
       {
         onEvent: (event, data) => {
+           console.log('[HomeScreen] onEvent:', event, 'data:', data);
            if (event === 'conversation.message.delta') {
                setMessages(prev => {
                    const newMsgs = [...prev];
@@ -144,20 +201,9 @@ const HomeScreen = () => {
     );
   };
 
-  const startNewChat = () => {
-    setMessages([]);
-    setConversationId(undefined);
-    setIsSending(false);
-  };
-
   const renderWelcome = () => (
     <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.centerContent}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>🔧</Text>
-        </View>
-
         {/* Main Title */}
         <Text style={styles.mainTitle}>我是大志</Text>
 
@@ -200,23 +246,19 @@ const HomeScreen = () => {
               styles.messageRow,
               isUser ? styles.messageRowUser : styles.messageRowBot
           ]}>
-              {!isUser && (
-                  <View style={styles.botAvatar}>
-                      <Text style={styles.botAvatarText}>🔧</Text>
-                  </View>
-              )}
               <View style={[
                   styles.messageBubble,
                   isUser ? styles.userBubble : styles.botBubble
               ]}>
-                  <Text style={[
-                      styles.messageText,
-                      isUser ? styles.userMessageText : styles.botMessageText
-                  ]}>
-                      {item.text}
-                  </Text>
-                  {item.isLoading && !item.text && (
-                       <ActivityIndicator size="small" color="#999" style={{marginTop: 5}} />
+                  {item.isLoading && !item.text ? (
+                      <LoadingIndicator size={20} color={isUser ? '#fff' : '#E65100'} />
+                  ) : (
+                      <Text style={[
+                          styles.messageText,
+                          isUser ? styles.userMessageText : styles.botMessageText
+                      ]}>
+                          {getDisplayContent(item.text)}
+                      </Text>
                   )}
               </View>
           </View>
@@ -224,16 +266,15 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerSpacer} />
         <Text style={styles.headerTitle}>大志</Text>
         <TouchableOpacity 
-            style={styles.headerRightIcon}
-            onPress={startNewChat}
+          style={styles.newTopicButton}
+          onPress={startNewTopic}
         >
-          <Text style={styles.plusIcon}>+</Text>
+          <Text style={styles.newTopicIcon}>➕</Text>
         </TouchableOpacity>
       </View>
 
@@ -289,7 +330,7 @@ const HomeScreen = () => {
             </View>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -304,33 +345,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: 0, 
+    borderBottomWidth: 0,
     elevation: 0,
     backgroundColor: '#fff',
-  },
-  headerSpacer: {
-    width: 24, // To balance the right icon
+    marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
+    flex: 1,
+    textAlign: 'center',
   },
-  headerRightIcon: {
-    padding: 4,
-    borderWidth: 1.5,
-    borderColor: '#999',
-    borderRadius: 6,
-    width: 26,
-    height: 26,
+  newTopicButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  plusIcon: {
-    fontSize: 16,
-    color: '#333',
+  newTopicIcon: {
+    fontSize: 18,
+    color: '#E65100',
     fontWeight: 'bold',
-    marginTop: -2,
   },
   contentContainer: {
     flex: 1,
@@ -342,7 +380,7 @@ const styles = StyleSheet.create({
   centerContent: {
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 100,
   },
   logoContainer: {
     width: 80,
@@ -475,18 +513,6 @@ const styles = StyleSheet.create({
   },
   messageRowBot: {
       justifyContent: 'flex-start',
-  },
-  botAvatar: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: '#E8F0FE',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 8,
-  },
-  botAvatarText: {
-      fontSize: 20,
   },
   messageBubble: {
       maxWidth: '80%',

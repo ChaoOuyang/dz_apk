@@ -12,6 +12,7 @@ import {
 import HomeScreen from './src/screens/HomeScreen';
 import GroupScreen from './src/screens/GroupScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import TabIcon from './src/components/TabIcon';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -41,31 +42,26 @@ function App(): React.JSX.Element {
 
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
-        <TouchableOpacity 
-          style={styles.tabItem} 
-          onPress={() => setActiveTab('home')}
-        >
-          <View style={styles.iconContainer}>
-             <Text style={[styles.tabIcon, activeTab === 'home' && styles.activeTabText]}>💬</Text> 
-          </View>
-          <Text style={[styles.tabLabel, activeTab === 'home' && styles.activeTabText]}>大志</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.tabItem} 
-          onPress={() => setActiveTab('group')}
-        >
-          <Text style={[styles.tabIcon, activeTab === 'group' && styles.activeTabText]}>👥</Text>
-          <Text style={[styles.tabLabel, activeTab === 'group' && styles.activeTabText]}>群聊</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.tabItem} 
-          onPress={() => setActiveTab('profile')}
-        >
-          <Text style={[styles.tabIcon, activeTab === 'profile' && styles.activeTabText]}>👤</Text>
-          <Text style={[styles.tabLabel, activeTab === 'profile' && styles.activeTabText]}>我的</Text>
-        </TouchableOpacity>
+        {[
+          { key: 'home', label: '大志' },
+          { key: 'group', label: '群聊' },
+          { key: 'profile', label: '我的' },
+        ].map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            style={styles.tabItem}
+            onPress={() => setActiveTab(tab.key as any)}
+          >
+            <TabIcon
+              type={tab.key as 'home' | 'group' | 'profile'}
+              isActive={activeTab === tab.key}
+              size={24}
+            />
+            <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabText]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </SafeAreaView>
   );
@@ -93,16 +89,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  iconContainer: {
-    marginBottom: 2,
-    // Add a specific style for the 'Da Zhi' icon if needed to match the square look
-    // but the emoji is fine for now.
-  },
-  tabIcon: {
-    fontSize: 24,
-    color: '#999',
-    marginBottom: 2,
+    gap: 4,
   },
   tabLabel: {
     fontSize: 10,
@@ -110,7 +97,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#FF5722', // Orange color matching the design
+    color: '#ff7041', // Theme color
   },
 });
 
