@@ -1,4 +1,4 @@
-package com.dazhinative
+package com.hellorn
 
 import android.app.Application
 import com.facebook.react.PackageList
