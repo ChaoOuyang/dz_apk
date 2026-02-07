@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import type { ActivityInfo } from './ActivityCard';
 import { theme } from '../theme';
-import { wechatPayService } from '../api';
+import { getWechatPayParams } from '../api';
 
 interface ActivityDetailSheetProps {
   visible: boolean;
@@ -95,7 +95,7 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
 
   /**
    * 处理微信支付
-   * 这会触发微信支付流程
+   * 仅请求获取必要的支付参数
    */
   const handleWechatPayment = async () => {
     if (!activity) {
@@ -105,65 +105,41 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
 
     try {
       setIsPaymentLoading(true);
-      console.log('[ActivityDetailSheet] Starting WeChat payment for activity:', activity.activityId);
+      console.log('[ActivityDetailSheet] Fetching WeChat payment params for activity:', activity.activityId);
 
-      // 检查微信是否安装
-      const isWechatInstalled = await wechatPayService.isWechatInstalled();
-      if (!isWechatInstalled) {
-        Alert.alert(
-          '提示',
-          '您的设备未安装微信，请先安装微信后再进行支付',
-          [{ text: '确定' }]
-        );
-        setIsPaymentLoading(false);
-        return;
-      }
-
-      // 发起支付
-      // 注：这里的用户信息可以从全局状态或用户上下文中获取
-      // 为简化起见，暂时使用默认值
-      const result = await wechatPayService.processPayment({
+      // 请求获取微信支付参数
+      const payParams = await getWechatPayParams({
         activityId: activity.activityId,
         type: 1,
         privateInsurance: 0,
-        phone: '', // 从用户信息中获取
-        name: '', // 从用户信息中获取
-        idCard: '', // 从用户信息中获取
+        phone: '',
+        name: '',
+        idCard: '',
       });
 
       setIsPaymentLoading(false);
 
-      if (result.success) {
-        console.log('[ActivityDetailSheet] Payment successful');
+      if (payParams) {
+        console.log('[ActivityDetailSheet] Successfully fetched payment params:', payParams);
         Alert.alert(
-          '支付成功',
-          '您已成功报名此活动',
-          [
-            {
-              text: '确定',
-              onPress: () => {
-                onSignup('signup');
-              },
-            },
-          ]
+          '成功',
+          '已获取支付参数，可以进行支付',
+          [{ text: '确定' }]
         );
       } else {
-        console.warn('[ActivityDetailSheet] Payment failed:', result.message);
-        if (result.errorCode !== -1) {
-          // -1 表示用户主动取消，不需要提示
-          Alert.alert(
-            '支付失败',
-            result.message,
-            [{ text: '重试' }]
-          );
-        }
+        console.warn('[ActivityDetailSheet] Failed to fetch payment params');
+        Alert.alert(
+          '提示',
+          '获取支付信息失败，请检查网络后重试',
+          [{ text: '确定' }]
+        );
       }
     } catch (error) {
       setIsPaymentLoading(false);
-      console.error('[ActivityDetailSheet] Payment error:', error);
+      console.error('[ActivityDetailSheet] Error fetching payment params:', error);
       Alert.alert(
         '错误',
-        '支付过程中出现异常，请重试',
+        '获取支付信息时出现异常，请重试',
         [{ text: '确定' }]
       );
     }

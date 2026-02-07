@@ -36,9 +36,8 @@ export {
 export { CozeApi };
 export type { HistoryMessage };
 
-// 导出微信支付服务
+// 导出微信支付服务（仅保留基础服务）
 export { wechatPayService, WechatPayService } from './wechatPayService';
-export type { PaymentResult } from './wechatPayService';
 
 /**
  * 活动接口类型定义
@@ -119,36 +118,7 @@ export async function getActivitySignup(
     // 返回 null 而不是抛出异常，让调用方处理
     return null;
   }
-}
-
-/**
- * 快速测试：请求 showSignup 接口
- * @param activityId 活动ID，默认使用 673123 进行测试
- * @returns 测试结果
- * 
- * @example
- * // 在你的组件中快速测试
- * const result = await testShowSignup();
- * console.log('测试结果:', result);
- */
-export async function testShowSignup(
-  activityId: number = 673123
-): Promise<ActivitySignupResponse | null> {
-  try {
-    console.log(`[Test] Starting testShowSignup with activityId: ${activityId}`);
-    
-    const result = await getActivitySignup(activityId, {
-      fromId: 6,
-      inviteId: 0,
-    });
-    
-    console.log('[Test] testShowSignup succeeded:', result);
-    return result;
-  } catch (error) {
-    console.error('[Test] testShowSignup failed:', error);
-    throw error;
-  }
-}
+} 
 
 /**
  * 便捷函数：获取微信支付参数
