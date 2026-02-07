@@ -78,7 +78,7 @@ export const ActivityCardList: React.FC<ActivityCardListProps> = ({
         ].filter(Boolean).join(' ');
         
         // 获取位置信息
-        const location = activityData.localtion || activityData.location || '地点待定';
+        const location = activityData.localtion || '地点待定';
         
         // 获取报名人数
         const signupNum = activityData.signupNum || 0;
