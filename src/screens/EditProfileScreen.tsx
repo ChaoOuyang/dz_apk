@@ -35,7 +35,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBackPress }) =>
     setIsSaving(true);
     try {
       // 模拟保存延迟
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(() => resolve(undefined), 500));
 
       updateUserProfile({
         nickname: editedNickname,
@@ -54,10 +54,10 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBackPress }) =>
   const handleWeChatBinding = () => {
     if (isWeChatBound) {
       Alert.alert('解绑微信', '确定要解绑微信吗？', [
-        { text: '取消', onPress: () => {} },
+        { text: '取消', onPress: (_?: unknown) => {} },
         {
           text: '确定',
-          onPress: () => {
+          onPress: (_?: unknown) => {
             unbindWeChat();
             setIsWeChatBound(false);
             Alert.alert('成功', '已解绑微信');
@@ -67,10 +67,10 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBackPress }) =>
     } else {
       // 模拟微信绑定流程
       Alert.alert('绑定微信', '即将跳转到微信绑定页面', [
-        { text: '取消', onPress: () => {} },
+        { text: '取消', onPress: (_?: unknown) => {} },
         {
           text: '继续',
-          onPress: () => {
+          onPress: (_?: unknown) => {
             // 模拟绑定成功
             bindWeChat();
             setIsWeChatBound(true);
