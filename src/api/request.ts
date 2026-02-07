@@ -93,16 +93,24 @@ function buildRequestData(
  * @throws 业务错误时 throw
  */
 function handleResponse<T>(
-  response: ApiResponse<T>,
+  response: any,
   options: RequestOptions
 ): T | null {
   const { respCode, respMessage } = response;
 
   console.log('[ApiRequest] Response code:', respCode, 'Message:', respMessage);
+  console.log('[ApiRequest] Full response:', response);
 
   // 成功响应
   if (respCode === RESPONSE_CODES.SUCCESS) {
-    return response.data ?? null;
+    // 如果有 data 字段，返回 data；否则返回整个响应（去掉 respCode 和 respMessage）
+    if (response.data !== undefined) {
+      return response.data ?? null;
+    } else {
+      // 返回整个响应对象，不包括 respCode 和 respMessage
+      const { respCode: _, respMessage: __, ...data } = response;
+      return (Object.keys(data).length > 0 ? data : null) as T | null;
+    }
   }
 
   // 其他业务错误

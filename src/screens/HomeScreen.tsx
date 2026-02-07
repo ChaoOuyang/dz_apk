@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,18 +15,16 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { CozeApi, HistoryMessage } from '../api/CozeApi';
+import { CozeApi } from '../api';
+import type { HistoryMessage } from '../api';
 import { LoadingIndicator } from '../components/LoadingIndicator';
+import { ActivityCardList } from '../components/ActivityCardList';
+import type { ActivityInfo } from '../components/ActivityCard';
+import { ActivityDetailSheet } from '../components/ActivityDetailSheet';
 import { theme } from '../theme';
+import { useHomeScreenContext, type Message } from '../context/HomeScreenContext';
 
 const { width } = Dimensions.get('window');
-
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  isLoading?: boolean;
-}
 
 const getDisplayContent = (text: string) => {
   if (!text) return '';
@@ -73,21 +71,79 @@ const getDisplayContent = (text: string) => {
   return text;
 };
 
+/**
+ * 从 Coze API 响应文本中提取活动ID
+ * 支持的格式：
+ * - JSON: {"activityIds": [123, 456]} 或 {"activities": [{"id": 123}]}
+ * - JSON: {"content": "...", "outputMap": {"activityIds": [123, 456]}}
+ * - 纯数字数组: [123, 456]
+ * @param text API 响应文本
+ * @returns 活动ID数组，如果没有找到则返回空数组
+ */
+const extractActivityIds = (text: string): number[] => {
+  if (!text) return [];
+  
+  try {
+    // 尝试解析为 JSON
+    const json = JSON.parse(text);
+    
+    // 尝试多种可能的字段名 - 顶层级
+    if (json.activityIds && Array.isArray(json.activityIds)) {
+      const ids = json.activityIds.filter((id: any): id is number => typeof id === 'number');
+      if (ids.length > 0) return ids;
+    }
+    
+    // 在 outputMap 中查找 activityIds
+    if (json.outputMap && json.outputMap.activityIds && Array.isArray(json.outputMap.activityIds)) {
+      const ids = json.outputMap.activityIds.filter((id: any): id is number => typeof id === 'number');
+      if (ids.length > 0) return ids;
+    }
+    
+    // 检查 activities 字段
+    if (json.activities && Array.isArray(json.activities)) {
+      const ids = json.activities
+        .map((item: any) => item.id || item.activityId)
+        .filter((id: any): id is number => typeof id === 'number');
+      if (ids.length > 0) return ids;
+    }
+    
+    // 直接是数组
+    if (Array.isArray(json)) {
+      const ids = json.filter((id: any): id is number => typeof id === 'number');
+      if (ids.length > 0) return ids;
+    }
+  } catch (e) {
+    console.error('[extractActivityIds] Parse error:', e);
+  }
+  
+  return [];
+};
+
 const HomeScreen = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const flatListRef = useRef<FlatList>(null);
+  
+  // BottomSheet 状态
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityInfo | null>(null);
+  const [sheetLoading, setSheetLoading] = useState(false);
+  
+  const {
+    messages,
+    setMessages,
+    inputText,
+    setInputText,
+    isSending,
+    setIsSending,
+    conversationId,
+    setConversationId,
+    resetState,
+  } = useHomeScreenContext();
 
   const userId = "user_" + Math.floor(Math.random() * 1000000);
 
   const startNewTopic = () => {
     // Reset all state to start a new conversation
-    setMessages([]);
-    setInputText('');
-    setConversationId(undefined);
-    setIsSending(false);
+    resetState();
   };
 
   const sendMessage = (text: string) => {
@@ -99,7 +155,7 @@ const HomeScreen = () => {
       isUser: true,
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev: Message[]) => [...prev, userMsg]);
     setInputText('');
     setIsSending(true);
 
@@ -121,17 +177,17 @@ const HomeScreen = () => {
       isUser: false,
       isLoading: true,
     };
-    setMessages(prev => [...prev, botMsg]);
+    setMessages((prev: Message[]) => [...prev, botMsg]);
 
     CozeApi.chatWithStream(
       userId,
       text,
       history,
       {
-        onEvent: (event, data) => {
+        onEvent: (event: string, data: string) => {
            console.log('[HomeScreen] onEvent:', event, 'data:', data);
            if (event === 'conversation.message.delta') {
-               setMessages(prev => {
+               setMessages((prev: Message[]) => {
                    const newMsgs = [...prev];
                    const index = newMsgs.findIndex(m => m.id === botMsgId);
                    if (index !== -1) {
@@ -145,43 +201,52 @@ const HomeScreen = () => {
                });
            }
         },
-        onSuccess: (convId, reply, outputMap, subIntent) => {
+        onSuccess: (convId: string, reply: string, outputMap?: string, subIntent?: string) => {
             setConversationId(convId);
             setIsSending(false);
             // Finalize if needed, usually onEvent handles the text updates.
             // If reply is empty (streamed), we are good.
             // If reply is provided (non-streamed or fallback), update it.
-            if (reply) {
-                setMessages(prev => {
-                   const newMsgs = [...prev];
-                   const index = newMsgs.findIndex(m => m.id === botMsgId);
-                   if (index !== -1 && !newMsgs[index].text) {
+            
+            console.log('[HomeScreen] onSuccess - reply:', reply);
+            console.log('[HomeScreen] onSuccess - outputMap:', outputMap);
+            
+            setMessages((prev: Message[]) => {
+               const newMsgs = [...prev];
+               const index = newMsgs.findIndex(m => m.id === botMsgId);
+               if (index !== -1) {
+                   // Get the final text (either from reply or already accumulated in streaming)
+                   const finalText = reply || newMsgs[index].text;
+                   
+                   // Extract activity IDs from the final text
+                   const activityIds = extractActivityIds(finalText);
+                   console.log('[HomeScreen] Extracted activity IDs:', activityIds);
+                   
+                   if (reply && !newMsgs[index].text) {
+                       // If reply was provided but text is empty, use reply
                        newMsgs[index] = {
                            ...newMsgs[index],
                            text: reply,
                            isLoading: false,
+                           activityIds: activityIds.length > 0 ? activityIds : undefined,
                        };
-                   }
-                   return newMsgs;
-               });
-            } else {
-                setMessages(prev => {
-                   const newMsgs = [...prev];
-                   const index = newMsgs.findIndex(m => m.id === botMsgId);
-                   if (index !== -1) {
+                   } else {
+                       // Mark as complete
                        newMsgs[index] = {
                            ...newMsgs[index],
                            isLoading: false,
+                           activityIds: activityIds.length > 0 ? activityIds : undefined,
                        };
                    }
-                   return newMsgs;
-               });
-            }
+                   console.log('[HomeScreen] Updated message with activityIds:', newMsgs[index].activityIds);
+               }
+               return newMsgs;
+           });
         },
-        onError: (code, msg) => {
+        onError: (code: string, msg: string) => {
             console.error('API Error:', code, msg);
             setIsSending(false);
-            setMessages(prev => {
+            setMessages((prev: Message[]) => {
                    const newMsgs = [...prev];
                    const index = newMsgs.findIndex(m => m.id === botMsgId);
                    if (index !== -1) {
@@ -240,28 +305,79 @@ const HomeScreen = () => {
     </ScrollView>
   );
 
+  const handleActivitySignup = (activityId: number, activityInfo: ActivityInfo) => {
+    console.log('[HomeScreen] Opening activity detail sheet for:', activityId, activityInfo);
+    setSelectedActivity(activityInfo);
+    setSheetVisible(true);
+  };
+
+  const handleSheetSignup = (status: 'signup' | 'pending') => {
+    if (!selectedActivity) return;
+    
+    console.log('[HomeScreen] User confirmed action:', status, 'for activity:', selectedActivity.activityId);
+    setSheetLoading(true);
+    
+    // 模拟网络请求
+    setTimeout(() => {
+      setSheetLoading(false);
+      setSheetVisible(false);
+      setSelectedActivity(null);
+      
+      // TODO: 这里可以发送报名请求到后端
+      // 根据 status 决定是"报名"还是"待定"
+      console.log('[HomeScreen] Action completed:', status);
+      
+      // 可以显示一个 Toast 或成功提示
+    }, 1000);
+  };
+
+  const handleSheetClose = () => {
+    setSheetVisible(false);
+    setSelectedActivity(null);
+  };
+
   const renderMessageItem = ({ item }: { item: Message }) => {
       const isUser = item.isUser;
+      const displayContent = getDisplayContent(item.text);
+      
+      // Debug log
+      if (!isUser && item.activityIds) {
+          console.log('[renderMessageItem] Bot message with activityIds:', item.activityIds);
+      }
+      
       return (
-          <View style={[
-              styles.messageRow,
-              isUser ? styles.messageRowUser : styles.messageRowBot
-          ]}>
+          <View>
+              {/* Message Bubble */}
               <View style={[
-                  styles.messageBubble,
-                  isUser ? styles.userBubble : styles.botBubble
+                  styles.messageRow,
+                  isUser ? styles.messageRowUser : styles.messageRowBot
               ]}>
-                  {item.isLoading && !item.text ? (
-                      <LoadingIndicator size={20} color={isUser ? '#fff' : '#E65100'} />
-                  ) : (
-                      <Text style={[
-                          styles.messageText,
-                          isUser ? styles.userMessageText : styles.botMessageText
-                      ]}>
-                          {getDisplayContent(item.text)}
-                      </Text>
-                  )}
+                  <View style={[
+                      styles.messageBubble,
+                      isUser ? styles.userBubble : styles.botBubble
+                  ]}>
+                      {item.isLoading && !item.text ? (
+                          <LoadingIndicator size={20} color={isUser ? '#fff' : '#E65100'} />
+                      ) : displayContent ? (
+                          <Text style={[
+                              styles.messageText,
+                              isUser ? styles.userMessageText : styles.botMessageText
+                          ]}>
+                              {displayContent}
+                          </Text>
+                      ) : null}
+                  </View>
               </View>
+              
+              {/* Activity Cards */}
+              {!isUser && item.activityIds && item.activityIds.length > 0 && (
+                  <View style={styles.activityListContainer}>
+                      <ActivityCardList
+                          activityIds={item.activityIds}
+                          onSignup={handleActivitySignup}
+                      />
+                  </View>
+              )}
           </View>
       );
   };
@@ -270,14 +386,24 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <View style={styles.headerPlaceholder} />
         <Text style={styles.headerTitle}>大志</Text>
         <TouchableOpacity 
           style={styles.newTopicButton}
           onPress={startNewTopic}
         >
-          <Text style={styles.newTopicIcon}>➕</Text>
+          <Text style={styles.newTopicIcon}>💬</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Activity Detail Sheet */}
+      <ActivityDetailSheet
+        visible={sheetVisible}
+        activity={selectedActivity}
+        onClose={handleSheetClose}
+        onSignup={handleSheetSignup}
+        isLoading={sheetLoading}
+      />
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -302,7 +428,10 @@ const HomeScreen = () => {
         <View style={styles.bottomArea}>
             {/* Action Buttons Row */}
             <View style={styles.actionButtonsRow}>
-                <TouchableOpacity style={styles.actionButton}>
+                <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => sendMessage('你好大志，能给我推荐几个活动吗？')}
+                >
                     <Text style={styles.actionButtonIcon}>🏃</Text>
                     <Text style={styles.actionButtonText}>找活动</Text>
                 </TouchableOpacity>
@@ -345,24 +474,31 @@ const styles = StyleSheet.create({
     height: theme.spacing.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 0,
     elevation: 0,
     backgroundColor: theme.colors.background,
     marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    position: 'relative',
+  },
+  headerPlaceholder: {
+    position: 'absolute',
+    left: theme.spacing.lg,
+    width: 36,
+    height: 36,
   },
   headerTitle: {
     ...theme.typography.title,
     color: theme.colors.text.primary,
-    flex: 1,
     textAlign: 'center',
   },
   newTopicButton: {
+    position: 'absolute',
+    right: theme.spacing.lg,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -453,35 +589,46 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   inputContainer: {
     flex: 1,
-    backgroundColor: theme.colors.inputBackground,
-    borderRadius: 24,
+    backgroundColor: '#fff',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.inputBorder,
-    height: theme.spacing.inputHeight,
+    borderColor: '#E8E8E8',
+    height: 40,
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    marginRight: theme.spacing.md,
-    ...theme.shadows.light,
+    paddingHorizontal: 14,
+    marginRight: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   input: {
     ...theme.typography.body,
     color: theme.colors.inputText,
+    fontSize: 14,
+    flex: 1,
+    padding: 0,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: theme.spacing.sm,
   },
   sendIcon: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#fff',
     fontWeight: 'bold',
   },
@@ -522,6 +669,10 @@ const styles = StyleSheet.create({
   },
   botMessageText: {
       color: theme.colors.messageBubbleBotText,
+  },
+  activityListContainer: {
+      marginTop: theme.spacing.md,
+      marginBottom: theme.spacing.md,
   },
 });
 

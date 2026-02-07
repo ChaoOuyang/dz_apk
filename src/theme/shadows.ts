@@ -17,6 +17,15 @@ export const shadows = {
     elevation: 5,
   },
   
+  // Large Shadow
+  large: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 15,
+  },
+  
   // Heavy Shadow
   heavy: {
     shadowColor: '#000000',

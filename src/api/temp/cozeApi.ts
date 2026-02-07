@@ -47,6 +47,76 @@ export const chatWithStream = (
   // Let's restructure slightly to handle URL construction first.
 };
 
+/**
+ * Mock 数据配置
+ * 当用户输入包含特定关键词时，返回 mock 数据而不是调用真实 API
+ */
+const MOCK_KEYWORDS = ['周末', '活动', '足球', '球'];
+const MOCK_RESPONSE = {
+  content: "为您推荐北京多个区域的周末足球活动，涵盖室内外多种场地，均有不同程度的优惠，价格实惠，您可以查看下方活动卡片，挑选合适的活动报名。",
+  outputMap: {
+    activityIds: [672361, 672364]
+  }
+};
+
+/**
+ * 检查是否应该使用 mock 数据
+ * @param userMessage 用户消息
+ * @returns 是否使用 mock 数据
+ */
+const shouldUseMock = (userMessage: string): boolean => {
+  return MOCK_KEYWORDS.some(keyword => userMessage.includes(keyword));
+};
+
+/**
+ * 模拟流式响应
+ * @param callback 回调函数
+ * @param conversationId 会话ID
+ */
+const simulateStreamResponse = (
+  callback: StreamCallback,
+  conversationId?: string
+) => {
+  const mockConversationId = conversationId || `mock_conv_${Date.now()}`;
+  let fullContent = '';
+
+  // 模拟逐字流送内容
+  const content = MOCK_RESPONSE.content;
+  const chunkSize = 10;
+  let currentIndex = 0;
+
+  const sendNextChunk = () => {
+    if (currentIndex < content.length) {
+      const chunk = content.substring(currentIndex, currentIndex + chunkSize);
+      fullContent += chunk;
+      currentIndex += chunkSize;
+      
+      // 模拟 delta 事件
+      callback.onEvent('conversation.message.delta', chunk);
+      
+      // 继续发送下一个块，使用 setTimeout 模拟异步流
+      setTimeout(sendNextChunk, 50);
+    } else {
+      // 所有内容发送完毕，发送完成事件
+      setTimeout(() => {
+        // 构建最终响应数据（包含 outputMap）
+        const finalReply = JSON.stringify(MOCK_RESPONSE);
+        
+        callback.onSuccess(
+          mockConversationId,
+          finalReply,
+          JSON.stringify(MOCK_RESPONSE.outputMap),
+          undefined
+        );
+        callback.onComplete();
+      }, 100);
+    }
+  };
+
+  // 开始发送
+  sendNextChunk();
+};
+
 export class CozeApi {
   static chatWithStream(
     userId: string,
@@ -55,6 +125,13 @@ export class CozeApi {
     callback: StreamCallback,
     conversationId?: string
   ) {
+    // 检查是否应该使用 mock 数据
+    if (shouldUseMock(userMessage)) {
+      console.log('[CozeApi] Using mock response for message:', userMessage);
+      simulateStreamResponse(callback, conversationId);
+      return;
+    }
+
     let url = API_URL;
     if (conversationId) {
       url += `?conversation_id=${encodeURIComponent(conversationId)}`;

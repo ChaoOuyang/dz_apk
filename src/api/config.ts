@@ -7,7 +7,7 @@
 export const API_BASE_URL = 'https://interface.dazhiyouqiu.com/0827/';
 
 // 固定的会话令牌（rdsession）
-export const FIXED_SESSION = 'ttAyrqPeGaTMHbhx';
+export const FIXED_SESSION = 'axdTx2Xlq4Xbl7xL';
 
 // 密钥（用于请求签名）
 export const API_SECRET = 'e2ffab74c3d1f8477a801a7377b66125';
@@ -16,6 +16,8 @@ export const API_SECRET = 'e2ffab74c3d1f8477a801a7377b66125';
 export const API_ENDPOINTS = { 
   // 活动报名展示
   showSignup: 'api/core/show_signup',
+  // 获取微信支付参数
+  getWechatPayParams: 'api/attend/userAttendInsurance',
 };
 
 /**

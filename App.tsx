@@ -14,10 +14,30 @@ import GroupScreen from './src/screens/GroupScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import TabIcon from './src/components/TabIcon';
 import { theme } from './src/theme';
+import { HomeScreenProvider } from './src/context/HomeScreenContext';
+import { UserProvider } from './src/context/UserContext';
 
-function App(): React.JSX.Element {
+interface AppContextType {
+  activeTab: 'home' | 'group' | 'profile';
+  setActiveTab: (tab: 'home' | 'group' | 'profile') => void;
+  showTabBar: boolean;
+  setShowTabBar: (show: boolean) => void;
+}
+
+const AppContext = React.createContext<AppContextType | undefined>(undefined);
+
+export const useAppContext = () => {
+  const context = React.useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useAppContext must be used within AppProvider');
+  }
+  return context;
+};
+
+function AppContent(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   const [activeTab, setActiveTab] = useState<'home' | 'group' | 'profile'>('home');
+  const [showTabBar, setShowTabBar] = useState(true);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -33,38 +53,52 @@ function App(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      
-      {/* Main Content Area */}
-      <View style={styles.content}>
-        {renderContent()}
-      </View>
+    <AppContext.Provider value={{ activeTab, setActiveTab, showTabBar, setShowTabBar }}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+        
+        {/* Main Content Area */}
+        <View style={styles.content}>
+          {renderContent()}
+        </View>
 
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        {[
-          { key: 'home', label: '大志' },
-          { key: 'group', label: '群聊' },
-          { key: 'profile', label: '我的' },
-        ].map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={styles.tabItem}
-            onPress={() => setActiveTab(tab.key as any)}
-          >
-            <TabIcon
-              type={tab.key as 'home' | 'group' | 'profile'}
-              isActive={activeTab === tab.key}
-              size={24}
-            />
-            <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabText]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </SafeAreaView>
+        {/* Bottom Tab Bar */}
+        {showTabBar && (
+          <View style={styles.tabBar}>
+            {[
+              { key: 'home', label: '大志' },
+              { key: 'group', label: '群聊' },
+              { key: 'profile', label: '我的' },
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.tabItem}
+                onPress={() => setActiveTab(tab.key as any)}
+              >
+                <TabIcon
+                  type={tab.key as 'home' | 'group' | 'profile'}
+                  isActive={activeTab === tab.key}
+                  size={24}
+                />
+                <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabText]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </SafeAreaView>
+    </AppContext.Provider>
+  );
+}
+
+function App(): React.JSX.Element {
+  return (
+    <UserProvider>
+      <HomeScreenProvider>
+        <AppContent />
+      </HomeScreenProvider>
+    </UserProvider>
   );
 }
 
