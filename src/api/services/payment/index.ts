@@ -3,7 +3,7 @@
  */
 
 export { wechatPayService, WechatPayService } from './wechatPayService';
-export { executeWechatPaymentFlow, payForActivity, getWechatPayParams } from './wechatPayUtils';
+export { executeWechatPaymentFlow, payForActivity, getWechatPayParams, handlePostPaymentGroupLogic } from './wechatPayUtils';
 export { initializeWechatPay, isWechatPayInitialized, getWechatAppId } from './wechatPayInit';
 
 export type {

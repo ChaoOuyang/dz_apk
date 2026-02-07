@@ -6,6 +6,15 @@
 
 import { request } from '../../core';
 import type { ActivitySignupParams, ActivitySignupResponse } from '../../types';
+import { USE_MOCK_DATA, MOCK_DELAY_MS, getActivitySignupMock } from '../../mocks';
+
+/**
+ * 模拟网络延迟
+ * @param ms 延迟时间（毫秒）
+ */
+async function mockDelay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * 便捷函数：获取活动报名信息
@@ -24,6 +33,17 @@ export async function getActivitySignup(
   params?: Partial<ActivitySignupParams>
 ): Promise<ActivitySignupResponse | null> {
   try {
+    // 如果启用了 mock 数据，直接返回 mock 数据
+    if (USE_MOCK_DATA) {
+      console.log(`[getActivitySignup] Using MOCK data for activity ${activityId}`);
+      // 模拟网络延迟
+      await mockDelay(MOCK_DELAY_MS);
+      const mockData = getActivitySignupMock();
+      console.log(`[getActivitySignup] Mock data for activity ${activityId}:`, mockData);
+      return mockData;
+    }
+
+    // 否则调用实际的 API
     const result = await request<ActivitySignupResponse>(
       'showSignup',
       {

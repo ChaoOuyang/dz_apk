@@ -50,6 +50,7 @@ export {
   executeWechatPaymentFlow,
   payForActivity,
   getWechatPayParams,
+  handlePostPaymentGroupLogic,
   initializeWechatPay,
   isWechatPayInitialized,
   getWechatAppId,
@@ -60,3 +61,23 @@ export { CozeApi } from './services/coze';
 
 // 活动服务
 export { getActivitySignup } from './services/activity';
+
+// 群组服务
+export {
+  GroupService,
+  getGroupByActivity,
+  createGroup,
+  getOrCreateGroup,
+  addMemberToGroup,
+} from './services/group';
+export type { AppGroup, GroupCreateResponse, GroupInfoResponse, GroupQueryResponse, AddMemberResponse } from './services/group';
+
+// ============ Mock 数据 ============
+export {
+  USE_MOCK_DATA,
+  MOCK_DELAY_MS,
+  ACTIVITY_SIGNUP_MOCK,
+  getActivitySignupMock,
+  WECHAT_PAY_PARAMS_MOCK,
+  getWechatPayParamsMock,
+} from './mocks';

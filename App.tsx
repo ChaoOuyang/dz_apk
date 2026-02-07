@@ -23,6 +23,13 @@ interface AppContextType {
   setActiveTab: (tab: 'home' | 'group' | 'profile') => void;
   showTabBar: boolean;
   setShowTabBar: (show: boolean) => void;
+  // 群导航相关
+  targetGroupId: string | number | null;
+  setTargetGroupId: (id: string | number | null) => void;
+  targetGroupName: string | null;
+  setTargetGroupName: (name: string | null) => void;
+  targetActivityId: number | null;
+  setTargetActivityId: (id: number | null) => void;
 }
 
 const AppContext = React.createContext<AppContextType | undefined>(undefined);
@@ -39,6 +46,9 @@ function AppContent(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   const [activeTab, setActiveTab] = useState<'home' | 'group' | 'profile'>('home');
   const [showTabBar, setShowTabBar] = useState(true);
+  const [targetGroupId, setTargetGroupId] = useState<string | number | null>(null);
+  const [targetGroupName, setTargetGroupName] = useState<string | null>(null);
+  const [targetActivityId, setTargetActivityId] = useState<number | null>(null);
 
   // 初始化微信支付服务
   useEffect(() => {
@@ -65,7 +75,18 @@ function AppContent(): React.JSX.Element {
   };
 
   return (
-    <AppContext.Provider value={{ activeTab, setActiveTab, showTabBar, setShowTabBar }}>
+    <AppContext.Provider value={{ 
+      activeTab, 
+      setActiveTab, 
+      showTabBar, 
+      setShowTabBar,
+      targetGroupId,
+      setTargetGroupId,
+      targetGroupName,
+      setTargetGroupName,
+      targetActivityId,
+      setTargetActivityId,
+    }}>
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         

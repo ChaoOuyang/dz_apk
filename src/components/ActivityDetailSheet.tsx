@@ -16,7 +16,10 @@ import {
 } from 'react-native';
 import type { ActivityInfo } from './ActivityCard';
 import { theme } from '../theme';
-import { payForActivity } from '../api';
+import { payForActivity, handlePostPaymentGroupLogic } from '../api';
+import { PaymentSuccessModal } from './PaymentSuccessModal';
+import { useAppContext } from '../../App';
+import { useUserContext } from '../context/UserContext';
 
 interface ActivityDetailSheetProps {
   visible: boolean;
@@ -38,6 +41,10 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
 }) => {
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalLoading, setSuccessModalLoading] = useState(false);
+  const appContext = useAppContext();
+  const { user } = useUserContext();
 
   useEffect(() => {
     if (visible) {
@@ -94,6 +101,44 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
   };
 
   /**
+   * 处理支付成功后的群逻辑
+   */
+  const handleSuccessModalConfirm = async () => {
+    if (!activity) {
+      console.error('[ActivityDetailSheet] No activity for group handling');
+      return;
+    }
+
+    setSuccessModalLoading(true);
+    console.log('[ActivityDetailSheet] Handling post-payment group logic');
+
+    try {
+      // 获取或创建群，并拉用户进群
+      const groupId = await handlePostPaymentGroupLogic(activity.activityId, user.id);
+
+      if (groupId) {
+        console.log('[ActivityDetailSheet] Successfully handled group logic, groupId:', groupId);
+        // 更新 AppContext 中的群信息
+        appContext.setTargetGroupId(groupId);
+        appContext.setTargetGroupName(`${activity.activityName}`);
+        appContext.setTargetActivityId(activity.activityId);
+        // 切换到群聊 tab
+        appContext.setActiveTab('group');
+      } else {
+        console.error('[ActivityDetailSheet] Failed to handle group logic');
+        Alert.alert('提示', '加入群聊失败，请重试');
+      }
+    } catch (error) {
+      console.error('[ActivityDetailSheet] Error handling group logic:', error);
+      Alert.alert('错误', '处理群聊时出现错误');
+    } finally {
+      setSuccessModalLoading(false);
+      setShowSuccessModal(false);
+      onClose();
+    }
+  };
+
+  /**
    * 处理微信支付
    * 使用支付工具函数完成整个支付流程
    */
@@ -114,9 +159,9 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
       idCard: '',
       onSuccess: () => {
         setIsPaymentLoading(false);
-        console.log('[ActivityDetailSheet] Payment successful, calling onSignup');
-        onSignup('signup');
-        onClose();
+        console.log('[ActivityDetailSheet] Payment successful, showing success modal');
+        // 显示支付成功弹窗
+        setShowSuccessModal(true);
       },
       onCancel: () => {
         setIsPaymentLoading(false);
@@ -129,45 +174,54 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
     });
   };
 
-  if (!visible) return null;
+  if (!visible && !showSuccessModal) return null;
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="none"
-      onRequestClose={onClose}
-    >
-      {/* 背景遮罩 */}
-      <TouchableOpacity 
-        style={styles.backdrop}
-        onPress={onClose}
-        activeOpacity={1}
+    <>
+      {/* 支付成功弹窗 */}
+      <PaymentSuccessModal
+        visible={showSuccessModal}
+        activityName={activity?.activityName || '活动'}
+        onConfirm={handleSuccessModalConfirm}
+        isLoading={successModalLoading}
       />
 
-        {/* BottomSheet */}
-      <Animated.View
-        style={[
-          styles.sheet,
-          {
-            transform: [
-              {
-                translateY: slideAnim,
-              },
-            ],
-          },
-        ]}
+      <Modal
+        transparent
+        visible={visible}
+        animationType="none"
+        onRequestClose={onClose}
       >
-        {/* 拖动指示条 */}
-        <View style={styles.dragIndicator} />
+        {/* 背景遮罩 */}
+        <TouchableOpacity 
+          style={styles.backdrop}
+          onPress={onClose}
+          activeOpacity={1}
+        />
 
-        {/* 容器：内容 */}
-        <ScrollView 
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={true}
-          {...panResponder.panHandlers}
+          {/* BottomSheet */}
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              transform: [
+                {
+                  translateY: slideAnim,
+                },
+              ],
+            },
+          ]}
         >
+          {/* 拖动指示条 */}
+          <View style={styles.dragIndicator} />
+
+          {/* 容器：内容 */}
+          <ScrollView 
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={true}
+            {...panResponder.panHandlers}
+          >
           {activity && (
             <>
               {/* 活动名称 */}
@@ -261,9 +315,10 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
               </View>
             </>
           )}
-        </ScrollView>
-      </Animated.View>
-    </Modal>
+          </ScrollView>
+        </Animated.View>
+      </Modal>
+    </>
   );
 };
 

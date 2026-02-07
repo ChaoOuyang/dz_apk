@@ -2,11 +2,14 @@
  * 微信支付工具函数
  * 
  * 提供高级的微信支付接口，简化支付流程
+ * 支付成功后会自动处理群相关逻辑
  */
 
 import { Alert } from 'react-native';
 import { request } from '../../core';
 import { wechatPayService } from './wechatPayService';
+import { getOrCreateGroup, addMemberToGroup } from '../group';
+import { USE_MOCK_DATA, MOCK_DELAY_MS, getWechatPayParamsMock } from '../../mocks';
 import type {
   WechatPayParams,
   WechatPayResult,
@@ -17,12 +20,12 @@ import type {
 /**
  * 完整的微信支付流程
  * 
- * 1. 检查微信安装状态
- * 2. 检查微信支付支持
- * 3. 获取支付参数
- * 4. 初始化微信服务
- * 5. 发起支付
- * 6. 处理支付结果
+ * 1. 初始化微信服务
+ * 2. 获取支付参数
+ * 3. 发起支付
+ * 4. 处理支付结果
+ * 
+ * 注意：在 Mock 模式下，会跳过微信检查，直接模拟支付成功
  */
 export async function executeWechatPaymentFlow(
   config: WechatPayFlowConfig
@@ -30,29 +33,23 @@ export async function executeWechatPaymentFlow(
   try {
     console.log('[WechatPayUtils] Starting payment flow for activity:', config.activityId);
 
-    // 步骤 1: 检查微信是否已安装
-    console.log('[WechatPayUtils] Checking WeChat installation...');
-    const isWechatInstalled = await wechatPayService.isWechatInstalled();
-    if (!isWechatInstalled) {
-      const errorMsg = '请先安装微信应用';
-      console.warn('[WechatPayUtils]', errorMsg);
-      config.onError?.(errorMsg);
-      showAlert('提示', errorMsg);
-      return null;
+    // 步骤 1: 初始化微信服务（如果未初始化）
+    if (!wechatPayService.isInitialized()) {
+      console.log('[WechatPayUtils] Initializing WeChat service...');
+      const initSuccess = await wechatPayService.initialize({
+        appId: 'mock_app_id', // Mock 模式下可以使用任意 AppID
+      });
+
+      if (!initSuccess) {
+        const errorMsg = '微信服务初始化失败，请重试';
+        console.error('[WechatPayUtils]', errorMsg);
+        config.onError?.(errorMsg);
+        showAlert('错误', errorMsg);
+        return null;
+      }
     }
 
-    // 步骤 2: 检查微信支付是否可用
-    console.log('[WechatPayUtils] Checking WeChat pay support...');
-    const isPaySupported = await wechatPayService.isWechatPaySupported();
-    if (!isPaySupported) {
-      const errorMsg = '您的微信版本不支持支付功能，请升级微信';
-      console.warn('[WechatPayUtils]', errorMsg);
-      config.onError?.(errorMsg);
-      showAlert('提示', errorMsg);
-      return null;
-    }
-
-    // 步骤 3: 从后端获取微信支付参数
+    // 步骤 2: 从后端获取微信支付参数
     console.log('[WechatPayUtils] Fetching payment params from backend...');
     const payParams = await getWechatPayParams({
       activityId: config.activityId,
@@ -73,37 +70,21 @@ export async function executeWechatPaymentFlow(
 
     console.log('[WechatPayUtils] Successfully fetched payment params');
 
-    // 步骤 4: 初始化微信服务（如果未初始化）
-    if (!wechatPayService.isInitialized()) {
-      console.log('[WechatPayUtils] Initializing WeChat service...');
-      const initSuccess = await wechatPayService.initialize({
-        appId: payParams.appid,
-      });
-
-      if (!initSuccess) {
-        const errorMsg = '微信服务初始化失败，请重试';
-        console.error('[WechatPayUtils]', errorMsg);
-        config.onError?.(errorMsg);
-        showAlert('错误', errorMsg);
-        return null;
-      }
-    }
-
-    // 步骤 5: 发起微信支付
+    // 步骤 3: 发起微信支付（或 Mock 支付）
     console.log('[WechatPayUtils] Initiating payment...');
     const paymentResult = await wechatPayService.pay({
-      appid: payParams.appid,
-      partnerid: payParams.partnerid,
-      prepayid: payParams.prepayid,
-      noncestr: payParams.noncestr,
-      timestamp: payParams.timestamp,
-      sign: payParams.sign,
-      package: payParams.package,
+      appid: payParams.appid || 'mock_app_id',
+      partnerid: payParams.partnerid || '1000000',
+      prepayid: payParams.prepayid || `MOCK_${Date.now()}`,
+      noncestr: payParams.noncestr || 'mock_nonce',
+      timestamp: payParams.timestamp || Math.floor(Date.now() / 1000).toString(),
+      sign: payParams.sign || 'mock_sign',
+      package: payParams.package || 'Sign=WXPay',
     });
 
     console.log('[WechatPayUtils] Payment result:', paymentResult);
 
-    // 步骤 6: 处理支付结果
+    // 步骤 4: 处理支付结果
     handlePaymentResult(paymentResult, config);
 
     return paymentResult;
@@ -126,13 +107,7 @@ function handlePaymentResult(
   if (result.errCode === 0) {
     // 支付成功
     console.log('[WechatPayUtils] Payment successful');
-    showAlert(
-      '支付成功',
-      '您已成功报名该活动',
-      () => {
-        config.onSuccess?.(result);
-      }
-    );
+    config.onSuccess?.(result);
   } else if (result.errCode === -1) {
     // 用户取消支付
     console.log('[WechatPayUtils] Payment cancelled by user');
@@ -154,6 +129,47 @@ function handlePaymentResult(
 }
 
 /**
+ * 处理支付成功后的群相关逻辑
+ * 自动获取或创建活动群，拉用户进群
+ * 
+ * @param activityId 活动ID
+ * @param userId 用户ID
+ * @returns 群ID
+ */
+export async function handlePostPaymentGroupLogic(
+  activityId: number,
+  userId: string | number
+): Promise<number | string | null> {
+  try {
+    console.log('[WechatPayUtils] Handling post-payment group logic for activity:', activityId, 'user:', userId);
+    
+    // 步骤 1: 获取或创建群
+    const group = await getOrCreateGroup(activityId, `活动-${activityId}`);
+    
+    if (!group) {
+      console.error('[WechatPayUtils] Failed to get or create group');
+      return null;
+    }
+    
+    console.log('[WechatPayUtils] Got or created group:', group);
+    
+    // 步骤 2: 拉用户进群
+    const addMemberSuccess = await addMemberToGroup(group.groupId, userId);
+    
+    if (!addMemberSuccess) {
+      console.error('[WechatPayUtils] Failed to add member to group');
+      return null;
+    }
+    
+    console.log('[WechatPayUtils] Successfully added user to group');
+    return group.groupId;
+  } catch (error) {
+    console.error('[WechatPayUtils] Error handling post-payment group logic:', error);
+    return null;
+  }
+}
+
+/**
  * 显示提示框
  */
 function showAlert(
@@ -170,6 +186,14 @@ function showAlert(
 }
 
 /**
+ * 模拟网络延迟
+ * @param ms 延迟时间（毫秒）
+ */
+async function mockDelay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * 获取微信支付参数
  */
 export async function getWechatPayParams(
@@ -180,6 +204,16 @@ export async function getWechatPayParams(
       ...params,
       idCard: params.idCard ? '[REDACTED]' : undefined,
     });
+    
+    // 如果启用了 mock 数据，直接返回 mock 数据
+    if (USE_MOCK_DATA) {
+      console.log('[getWechatPayParams] Using MOCK data for activity', params.activityId);
+      // 模拟网络延迟
+      await mockDelay(MOCK_DELAY_MS);
+      const mockData = getWechatPayParamsMock();
+      console.log('[getWechatPayParams] Mock data for activity', params.activityId, ':', mockData);
+      return mockData;
+    }
     
     const result = await request<WechatPayResponse>(
       'getWechatPayParams',

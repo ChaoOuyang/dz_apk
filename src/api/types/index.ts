@@ -6,7 +6,17 @@
 export type { ApiResponse, RequestOptions } from './common';
 
 // 活动相关类型
-export type { ActivitySignupParams, ActivitySignupResponse } from './activity';
+export type {
+  ActivitySignupParams,
+  ActivitySignupResponse,
+  Activity,
+  TeamInfo,
+  Message,
+  ChargeActivity,
+  Signuper,
+  UserDivideValue,
+  OriginatorPersonTime,
+} from './activity';
 
 // 支付相关类型
 export type {

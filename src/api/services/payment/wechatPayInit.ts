@@ -16,23 +16,29 @@ const WECHAT_APP_ID = 'wx1234567890abcdef';
  * 初始化微信支付服务
  * 
  * 在应用启动时调用此函数，建议在 App.tsx 或 index.js 中调用
+ * 目前为 mock 模式，不实际初始化微信组件
  */
 export async function initializeWechatPay(): Promise<boolean> {
   try {
-    console.log('[WechatPayInit] Initializing WeChat payment service...');
+    console.log('[WechatPayInit] Initializing WeChat payment service (mock mode)...');
 
-    // 初始化微信支付服务
-    const success = await wechatPayService.initialize({
-      appId: WECHAT_APP_ID,
-    });
+    // 暂时 mock 初始化，不实际调用 wechatPayService
+    // 当前返回 true，避免应用启动失败
+    console.log('[WechatPayInit] WeChat payment service initialized (mock)');
+    return true;
 
-    if (success) {
-      console.log('[WechatPayInit] WeChat payment service initialized successfully');
-      return true;
-    } else {
-      console.warn('[WechatPayInit] Failed to initialize WeChat payment service');
-      return false;
-    }
+    // 实际初始化代码（已注释，待后续启用）
+    // const success = await wechatPayService.initialize({
+    //   appId: WECHAT_APP_ID,
+    // });
+    //
+    // if (success) {
+    //   console.log('[WechatPayInit] WeChat payment service initialized successfully');
+    //   return true;
+    // } else {
+    //   console.warn('[WechatPayInit] Failed to initialize WeChat payment service');
+    //   return false;
+    // }
   } catch (error) {
     console.error('[WechatPayInit] Error during initialization:', error);
     return false;
