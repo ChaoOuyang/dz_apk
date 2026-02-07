@@ -1,11 +1,221 @@
-curl 'https://interface.dazhiyouqiu.com/0827/api/attend/userAttendInsurance?type=1&privateInsurance=0&activityId=673509&phone=undefined&name=undefined&idCard=undefined&rdsession=ttAyrqPeGaTMHbhx&random=668628&timestamp=1770439380&secret=e2ffab74c3d1f8477a801a7377b66125&signture=234F733E70C4B72875495118BC9AB15E' \
-  -H 'Connection: keep-alive' \
-  -H 'User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1 wechatdevtools/2.01.2507252 MicroMessenger/8.0.5 Language/zh_CN webview/ hash/261555089' \
-  -H 'content-type: application/json' \
-  -H 'Accept: */*' \
-  -H 'Sec-Fetch-Site: cross-site' \
-  -H 'Sec-Fetch-Mode: cors' \
-  -H 'Sec-Fetch-Dest: empty' \
-  -H 'Referer: https://servicewechat.com/wx159d41be98ce4c90/devtools/page-frame.html' \
-  -H 'Accept-Language: zh-CN,zh;q=0.9' \
-  --compresse
+package com.dazhiyouqiu.api.Controller.app;
+
+import com.dazhiyouqiu.api.model.dto.AppGroupCreateRequest;
+import com.dazhiyouqiu.model.Response.RespJsonObject;
+import com.dazhiyouqiu.model.app.AppGroup;
+import com.dazhiyouqiu.model.app.AppGroupMessage;
+import com.dazhiyouqiu.model.common.User;
+import com.dazhiyouqiu.service.app.AppGroupService;
+import com.dazhiyouqiu.service.common_service.UserService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/app/group")
+@Api(description = "APP群组相关接口")
+public class AppGroupApiController {
+
+    protected static Logger logger = LoggerFactory.getLogger(AppGroupApiController.class);
+
+    @Autowired
+    private AppGroupService appGroupService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @ApiOperation(value = "创建群组", notes = "创建群组")
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
+    @ResponseBody
+    public RespJsonObject create(@RequestBody AppGroupCreateRequest request) {
+        RespJsonObject object = new RespJsonObject();
+        String openid = stringRedisTemplate.opsForValue().get(request.getRdsession());
+        User user = userService.getUser(openid);
+        if (user == null) {
+            object.setRespCode("40022");
+            object.setRespMessage("该用户不存在");
+            return object;
+        }
+
+        AppGroup group = appGroupService.createGroup(request.getActivityId(), request.getName(), user.getId());
+        object.put("group", group);
+        object.setSuccess();
+        return object;
+    }
+
+    @ApiOperation(value = "获取群信息", notes = "获取群信息")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long")
+    })
+    @RequestMapping(value = "/info", method = RequestMethod.GET)
+    @ResponseBody
+    public RespJsonObject info(String rdsession, Long groupId) {
+        RespJsonObject object = new RespJsonObject();
+        String openid = stringRedisTemplate.opsForValue().get(rdsession);
+        User user = userService.getUser(openid);
+        if (user == null) {
+            object.setRespCode("40022");
+            object.setRespMessage("该用户不存在");
+            return object;
+        }
+
+        AppGroup group = appGroupService.getGroupInfo(groupId);
+        object.put("group", group);
+        object.setSuccess();
+        return object;
+    }
+    
+    @ApiOperation(value = "查询活动对应的群", notes = "查询活动对应的群")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "activityId", value = "活动ID", required = true, dataType = "Long")
+    })
+    @RequestMapping(value = "/getByActivity", method = RequestMethod.GET)
+    @ResponseBody
+    public RespJsonObject getByActivity(String rdsession, Long activityId) {
+        RespJsonObject object = new RespJsonObject();
+        String openid = stringRedisTemplate.opsForValue().get(rdsession);
+        User user = userService.getUser(openid);
+        if (user == null) {
+            object.setRespCode("40022");
+            object.setRespMessage("该用户不存在");
+            return object;
+        }
+
+        AppGroup group = appGroupService.getGroupByActivity(activityId);
+        object.put("group", group);
+        object.setSuccess();
+        return object;
+    }
+
+    @ApiOperation(value = "拉人进群", notes = "拉人进群")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long"),
+            @ApiImplicitParam(name = "userId", value = "被拉用户ID", required = true, dataType = "Long")
+    })
+    @RequestMapping(value = "/member/add", method = RequestMethod.POST)
+    @ResponseBody
+    public RespJsonObject addMember(String rdsession, Long groupId, Long userId) {
+        RespJsonObject object = new RespJsonObject();
+        String openid = stringRedisTemplate.opsForValue().get(rdsession);
+        User user = userService.getUser(openid);
+        if (user == null) {
+            object.setRespCode("40022");
+            object.setRespMessage("该用户不存在");
+            return object;
+        }
+        
+        // 简单逻辑：允许任何登录用户拉人（或者根据需求限制权限）
+        // 根据“前端用拉成员接口实现就行”的要求，这里不做过多权限校验，只校验登录
+        
+        boolean result = appGroupService.addMember(groupId, userId);
+        if (result) {
+            object.setSuccess();
+        } else {
+            object.setRespCode("40001");
+            object.setRespMessage("添加失败或成员已存在");
+        }
+        return object;
+    }
+
+    @ApiOperation(value = "踢人", notes = "踢人")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long"),
+            @ApiImplicitParam(name = "userId", value = "被踢用户ID", required = true, dataType = "Long")
+    })
+    @RequestMapping(value = "/member/kick", method = RequestMethod.POST)
+    @ResponseBody
+    public RespJsonObject kickMember(String rdsession, Long groupId, Long userId) {
+        RespJsonObject object = new RespJsonObject();
+        String openid = stringRedisTemplate.opsForValue().get(rdsession);
+        User user = userService.getUser(openid);
+        if (user == null) {
+            object.setRespCode("40022");
+            object.setRespMessage("该用户不存在");
+            return object;
+        }
+
+        AppGroup group = appGroupService.getGroupInfo(groupId);
+        if (group == null) {
+            object.setRespCode("40004");
+            object.setRespMessage("群组不存在");
+            return object;
+        }
+
+        // 只有群主可以踢人
+        if (!group.getOwnerId().equals(user.getId())) {
+             object.setRespCode("40003");
+             object.setRespMessage("无权限操作");
+             return object;
+        }
+
+        appGroupService.kickMember(groupId, userId);
+        object.setSuccess();
+        return object;
+    }
+
+    @ApiOperation(value = "发送消息", notes = "发送消息")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long"),
+            @ApiImplicitParam(name = "content", value = "内容", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "type", value = "类型 1文本 2图片", required = true, dataType = "Integer")
+    })
+    @RequestMapping(value = "/message/send", method = RequestMethod.POST)
+    @ResponseBody
+    public RespJsonObject sendMessage(String rdsession, Long groupId, String content, Integer type) {
+        RespJsonObject object = new RespJsonObject();
+        String openid = stringRedisTemplate.opsForValue().get(rdsession);
+        User user = userService.getUser(openid);
+        if (user == null) {
+            object.setRespCode("40022");
+            object.setRespMessage("该用户不存在");
+            return object;
+        }
+
+        appGroupService.sendMessage(groupId, user.getId(), content, type);
+        object.setSuccess();
+        return object;
+    }
+
+    @ApiOperation(value = "获取消息列表", notes = "获取消息列表")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long")
+    })
+    @RequestMapping(value = "/message/list", method = RequestMethod.GET)
+    @ResponseBody
+    public RespJsonObject getMessages(String rdsession, Long groupId) {
+        RespJsonObject object = new RespJsonObject();
+        String openid = stringRedisTemplate.opsForValue().get(rdsession);
+        User user = userService.getUser(openid);
+        if (user == null) {
+            object.setRespCode("40022");
+            object.setRespMessage("该用户不存在");
+            return object;
+        }
+
+        List<AppGroupMessage> messages = appGroupService.getMessages(groupId);
+        object.put("messages", messages);
+        object.setSuccess();
+        return object;
+    }
+}

@@ -30,3 +30,23 @@ export type {
 
 // Coze 相关类型
 export type { HistoryMessage, StreamCallback } from './coze';
+
+// 群组相关类型
+export type {
+  AppGroup,
+  AppGroupMessage,
+  GroupCreateParams,
+  GroupInfoParams,
+  GroupQueryByActivityParams,
+  AddMemberParams,
+  KickMemberParams,
+  SendMessageParams,
+  GetMessagesParams,
+  GroupCreateResponse,
+  GroupInfoResponse,
+  GroupQueryResponse,
+  AddMemberResponse,
+  KickMemberResponse,
+  SendMessageResponse,
+  GetMessagesResponse,
+} from './group';
