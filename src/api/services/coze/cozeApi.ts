@@ -1,51 +1,14 @@
-export interface HistoryMessage {
-  role: string;
-  type: string;
-  contentType: string;
-  content: string;
-}
+/**
+ * Coze AI 对话服务
+ * 
+ * 提供与 Coze API 的集成，支持流式对话和 mock 数据
+ */
 
-export interface StreamCallback {
-  onEvent: (event: string, data: string) => void;
-  onSuccess: (conversationId: string, reply: string, outputMap?: string, subIntent?: string) => void;
-  onError: (code: string, message: string, errorJson?: any) => void;
-  onComplete: () => void;
-}
+import type { HistoryMessage, StreamCallback } from '../../types';
 
 const API_URL = "https://api.coze.cn/v3/chat";
 const BOT_ID = "7602827238899957796";
 const API_TOKEN = "sat_Dj1nYX9cC8kEUrjHn2X2wqAQD9UwAd5u8000t5xYQft28rLX8CMlLWRN50Ph2A1q";
-
-export const chatWithStream = (
-  userId: string,
-  userMessage: string,
-  historyMessages: HistoryMessage[] | null,
-  callback: StreamCallback,
-  conversationId?: string
-) => {
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', API_URL);
-  
-  xhr.setRequestHeader('Authorization', `Bearer ${API_TOKEN}`);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-
-  const requestBody: any = {
-    bot_id: BOT_ID,
-    user_id: userId,
-    stream: true,
-    additional_messages: [],
-  };
-
-  if (conversationId) {
-      // Note: Coze V3 API uses query param for conversation_id usually, but let's check the Kotlin code.
-      // Kotlin code: urlBuilder?.addQueryParameter("conversation_id", conversationId.trim())
-      // So we should append it to the URL if provided.
-      // However, we already opened the XHR. Let's fix this in a moment or just append to URL before open.
-  }
-  
-  // Re-open if needed or just handle URL construction before open.
-  // Let's restructure slightly to handle URL construction first.
-};
 
 /**
  * Mock 数据配置

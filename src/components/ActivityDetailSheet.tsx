@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import type { ActivityInfo } from './ActivityCard';
 import { theme } from '../theme';
-import { getWechatPayParams } from '../api';
+import { payForActivity } from '../api';
 
 interface ActivityDetailSheetProps {
   visible: boolean;
@@ -95,7 +95,7 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
 
   /**
    * 处理微信支付
-   * 仅请求获取必要的支付参数
+   * 使用支付工具函数完成整个支付流程
    */
   const handleWechatPayment = async () => {
     if (!activity) {
@@ -103,46 +103,30 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
       return;
     }
 
-    try {
-      setIsPaymentLoading(true);
-      console.log('[ActivityDetailSheet] Fetching WeChat payment params for activity:', activity.activityId);
+    setIsPaymentLoading(true);
+    console.log('[ActivityDetailSheet] Starting WeChat payment for activity:', activity.activityId);
 
-      // 请求获取微信支付参数
-      const payParams = await getWechatPayParams({
-        activityId: activity.activityId,
-        type: 1,
-        privateInsurance: 0,
-        phone: '',
-        name: '',
-        idCard: '',
-      });
-
-      setIsPaymentLoading(false);
-
-      if (payParams) {
-        console.log('[ActivityDetailSheet] Successfully fetched payment params:', payParams);
-        Alert.alert(
-          '成功',
-          '已获取支付参数，可以进行支付',
-          [{ text: '确定' }]
-        );
-      } else {
-        console.warn('[ActivityDetailSheet] Failed to fetch payment params');
-        Alert.alert(
-          '提示',
-          '获取支付信息失败，请检查网络后重试',
-          [{ text: '确定' }]
-        );
-      }
-    } catch (error) {
-      setIsPaymentLoading(false);
-      console.error('[ActivityDetailSheet] Error fetching payment params:', error);
-      Alert.alert(
-        '错误',
-        '获取支付信息时出现异常，请重试',
-        [{ text: '确定' }]
-      );
-    }
+    await payForActivity(activity.activityId, {
+      type: 1,
+      privateInsurance: 0,
+      phone: '',
+      name: '',
+      idCard: '',
+      onSuccess: () => {
+        setIsPaymentLoading(false);
+        console.log('[ActivityDetailSheet] Payment successful, calling onSignup');
+        onSignup('signup');
+        onClose();
+      },
+      onCancel: () => {
+        setIsPaymentLoading(false);
+        console.log('[ActivityDetailSheet] User cancelled payment');
+      },
+      onError: (errorMsg) => {
+        setIsPaymentLoading(false);
+        console.error('[ActivityDetailSheet] Payment error:', errorMsg);
+      },
+    });
   };
 
   if (!visible) return null;

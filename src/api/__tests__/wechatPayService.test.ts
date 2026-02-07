@@ -4,8 +4,8 @@
  * 测试微信支付的核心功能
  */
 
-import { wechatPayService, WechatPayService } from '../wechatPayService';
-import type { WechatPayResponse } from '../index';
+import { wechatPayService, WechatPayService } from '../services/payment';
+import type { WechatPayResponse } from '../types';
 
 /**
  * 模拟微信支付参数

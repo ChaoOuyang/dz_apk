@@ -1,4 +1,4 @@
-package com.hellorn
+package com.dazhiyouqiu.app
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

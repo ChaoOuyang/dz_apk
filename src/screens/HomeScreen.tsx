@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   StatusBar,
+  Keyboard,
 } from 'react-native';
 import { CozeApi } from '../api';
 import type { HistoryMessage } from '../api';
@@ -121,6 +122,7 @@ const extractActivityIds = (text: string): number[] => {
 
 const HomeScreen = () => {
   const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
   
   // BottomSheet 状态
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -138,6 +140,23 @@ const HomeScreen = () => {
     setConversationId,
     resetState,
   } = useHomeScreenContext();
+
+  // 处理键盘事件，自动滚动到底部
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        // 键盘显示时，延迟滚动到底部
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   const userId = "user_" + Math.floor(Math.random() * 1000000);
 
@@ -406,9 +425,9 @@ const HomeScreen = () => {
       />
 
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.contentContainer}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {messages.length === 0 ? (
             renderWelcome()
@@ -441,6 +460,7 @@ const HomeScreen = () => {
             <View style={styles.inputRow}>
                 <View style={styles.inputContainer}>
                 <TextInput
+                    ref={inputRef}
                     style={styles.input}
                     placeholder="发消息..."
                     placeholderTextColor={theme.colors.inputPlaceholder}
@@ -448,6 +468,7 @@ const HomeScreen = () => {
                     onChangeText={setInputText}
                     onSubmitEditing={() => sendMessage(inputText)}
                     returnKeyType="send"
+                    multiline={true}
                 />
                 </View>
                 <TouchableOpacity 
@@ -563,6 +584,7 @@ const styles = StyleSheet.create({
   bottomArea: {
     backgroundColor: theme.colors.background,
     borderTopWidth: 0,
+    paddingBottom: Platform.OS === 'ios' ? theme.spacing.md : theme.spacing.sm,
   },
   actionButtonsRow: {
     paddingHorizontal: theme.spacing.lg,
@@ -589,10 +611,11 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: 8,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: theme.colors.background,
   },
   inputContainer: {
     flex: 1,
@@ -600,7 +623,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E8E8E8',
-    height: 40,
+    minHeight: 40,
     justifyContent: 'center',
     paddingHorizontal: 14,
     marginRight: theme.spacing.sm,
@@ -618,6 +641,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     padding: 0,
+    minHeight: 40,
+    maxHeight: 100,
+    textAlignVertical: 'center',
   },
   sendButton: {
     width: 36,
@@ -634,8 +660,9 @@ const styles = StyleSheet.create({
   },
   chatListContent: {
       paddingHorizontal: theme.spacing.lg,
-      paddingBottom: theme.spacing.xl,
+      paddingBottom: theme.spacing.lg,
       paddingTop: theme.spacing.sm,
+      flexGrow: 1,
   },
   messageRow: {
       flexDirection: 'row',

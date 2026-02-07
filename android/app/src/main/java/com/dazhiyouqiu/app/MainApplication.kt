@@ -1,4 +1,4 @@
-package com.hellorn
+package com.dazhiyouqiu.app
 
 import android.app.Application
 import com.facebook.react.PackageList
