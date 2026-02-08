@@ -1,71 +1,13 @@
-package com.dazhiyouqiu.api.Controller.app;
-
-import com.dazhiyouqiu.api.model.dto.AppGroupCreateRequest;
-import com.dazhiyouqiu.model.Response.RespJsonObject;
-import com.dazhiyouqiu.model.app.AppGroup;
-import com.dazhiyouqiu.model.app.AppGroupMessage;
-import com.dazhiyouqiu.model.common.User;
-import com.dazhiyouqiu.service.app.AppGroupService;
-import com.dazhiyouqiu.service.common_service.UserService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/app/group")
-@Api(description = "APP群组相关接口")
-public class AppGroupApiController {
-
-    protected static Logger logger = LoggerFactory.getLogger(AppGroupApiController.class);
-
-    @Autowired
-    private AppGroupService appGroupService;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
-
-    @ApiOperation(value = "创建群组", notes = "创建群组")
-    @RequestMapping(value = "/create", method = RequestMethod.POST)
-    @ResponseBody
-    public RespJsonObject create(@RequestBody AppGroupCreateRequest request) {
-        RespJsonObject object = new RespJsonObject();
-        String openid = stringRedisTemplate.opsForValue().get(request.getRdsession());
-        User user = userService.getUser(openid);
-        if (user == null) {
-            object.setRespCode("40022");
-            object.setRespMessage("该用户不存在");
-            return object;
-        }
-
-        AppGroup group = appGroupService.createGroup(request.getActivityId(), request.getName(), user.getId());
-        object.put("group", group);
-        object.setSuccess();
-        return object;
-    }
-
-    @ApiOperation(value = "获取群信息", notes = "获取群信息")
+后端api的java实现：
+    @ApiOperation(value = "获取我的群组", notes = "获取我的群组，按活动状态分类")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
-            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long")
+        @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
+        @ApiImplicitParam(name = "page", value = "页码", required = false, dataType = "Integer", defaultValue = "1"),
+        @ApiImplicitParam(name = "size", value = "每页数量", required = false, dataType = "Integer", defaultValue = "10")
     })
-    @RequestMapping(value = "/info", method = RequestMethod.GET)
+    @RequestMapping(value = "/list/my", method = RequestMethod.GET)
     @ResponseBody
-    public RespJsonObject info(String rdsession, Long groupId) {
+    public RespJsonObject getMyGroups(String rdsession, @RequestParam(required = false, defaultValue = "1") Integer page, @RequestParam(required = false, defaultValue = "10") Integer size) {
         RespJsonObject object = new RespJsonObject();
         String openid = stringRedisTemplate.opsForValue().get(rdsession);
         User user = userService.getUser(openid);
@@ -75,147 +17,78 @@ public class AppGroupApiController {
             return object;
         }
 
-        AppGroup group = appGroupService.getGroupInfo(groupId);
-        object.put("group", group);
-        object.setSuccess();
-        return object;
-    }
-    
-    @ApiOperation(value = "查询活动对应的群", notes = "查询活动对应的群")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
-            @ApiImplicitParam(name = "activityId", value = "活动ID", required = true, dataType = "Long")
-    })
-    @RequestMapping(value = "/getByActivity", method = RequestMethod.GET)
-    @ResponseBody
-    public RespJsonObject getByActivity(String rdsession, Long activityId) {
-        RespJsonObject object = new RespJsonObject();
-        String openid = stringRedisTemplate.opsForValue().get(rdsession);
-        User user = userService.getUser(openid);
-        if (user == null) {
-            object.setRespCode("40022");
-            object.setRespMessage("该用户不存在");
-            return object;
-        }
-
-        AppGroup group = appGroupService.getGroupByActivity(activityId);
-        object.put("group", group);
-        object.setSuccess();
-        return object;
-    }
-
-    @ApiOperation(value = "拉人进群", notes = "拉人进群")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
-            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long"),
-            @ApiImplicitParam(name = "userId", value = "被拉用户ID", required = true, dataType = "Long")
-    })
-    @RequestMapping(value = "/member/add", method = RequestMethod.POST)
-    @ResponseBody
-    public RespJsonObject addMember(String rdsession, Long groupId, Long userId) {
-        RespJsonObject object = new RespJsonObject();
-        String openid = stringRedisTemplate.opsForValue().get(rdsession);
-        User user = userService.getUser(openid);
-        if (user == null) {
-            object.setRespCode("40022");
-            object.setRespMessage("该用户不存在");
-            return object;
-        }
+        List<AppGroupListVo> recruitingGroups = appGroupService.getRecruitingGroups(user.getId());
+        List<AppGroupListVo> historyGroups = appGroupService.getHistoryGroups(user.getId(), page, size);
         
-        // 简单逻辑：允许任何登录用户拉人（或者根据需求限制权限）
-        // 根据“前端用拉成员接口实现就行”的要求，这里不做过多权限校验，只校验登录
-        
-        boolean result = appGroupService.addMember(groupId, userId);
-        if (result) {
-            object.setSuccess();
-        } else {
-            object.setRespCode("40001");
-            object.setRespMessage("添加失败或成员已存在");
-        }
-        return object;
-    }
-
-    @ApiOperation(value = "踢人", notes = "踢人")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
-            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long"),
-            @ApiImplicitParam(name = "userId", value = "被踢用户ID", required = true, dataType = "Long")
-    })
-    @RequestMapping(value = "/member/kick", method = RequestMethod.POST)
-    @ResponseBody
-    public RespJsonObject kickMember(String rdsession, Long groupId, Long userId) {
-        RespJsonObject object = new RespJsonObject();
-        String openid = stringRedisTemplate.opsForValue().get(rdsession);
-        User user = userService.getUser(openid);
-        if (user == null) {
-            object.setRespCode("40022");
-            object.setRespMessage("该用户不存在");
-            return object;
-        }
-
-        AppGroup group = appGroupService.getGroupInfo(groupId);
-        if (group == null) {
-            object.setRespCode("40004");
-            object.setRespMessage("群组不存在");
-            return object;
-        }
-
-        // 只有群主可以踢人
-        if (!group.getOwnerId().equals(user.getId())) {
-             object.setRespCode("40003");
-             object.setRespMessage("无权限操作");
-             return object;
-        }
-
-        appGroupService.kickMember(groupId, userId);
+        object.put("recruitingGroups", recruitingGroups);
+        object.put("historyGroups", historyGroups);
         object.setSuccess();
         return object;
     }
 
-    @ApiOperation(value = "发送消息", notes = "发送消息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
-            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long"),
-            @ApiImplicitParam(name = "content", value = "内容", required = true, dataType = "String"),
-            @ApiImplicitParam(name = "type", value = "类型 1文本 2图片", required = true, dataType = "Integer")
-    })
-    @RequestMapping(value = "/message/send", method = RequestMethod.POST)
-    @ResponseBody
-    public RespJsonObject sendMessage(String rdsession, Long groupId, String content, Integer type) {
-        RespJsonObject object = new RespJsonObject();
-        String openid = stringRedisTemplate.opsForValue().get(rdsession);
-        User user = userService.getUser(openid);
-        if (user == null) {
-            object.setRespCode("40022");
-            object.setRespMessage("该用户不存在");
-            return object;
+返回结果：
+
+{
+    "respMessage": "请求成功",
+    "recruitingGroups": [
+        {
+            "groupId": 9,
+            "groupName": "活动-674606",
+            "ownerId": 53,
+            "createTime": 1770557269000,
+            "activityId": 674606,
+            "status": 1,
+            "activeDate": 1770895800000,
+            "bollPark": "星优航体育培训基地",
+            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20230919/169512124672940408.jpg",
+            "remark": "早到热身，准点开球。有伤或有早退习惯的禁止参加。禁止提前离场，无故提前离场拉黑。活动开始前4小时内请假仍须缴纳场地费，否则标记鸽子。\n注意：禁止说教他人，主动前后场轮换，有人摔倒不管谁的责任主动伸手拉一把，安全第一，友谊第二，开心最重要。鸽子直接拉黑。rooney198304\n《免责条款》\n报名即视为同意此条款，足球是一项具有一定风险的体育运动，所有参与者风险自担。暨出现受伤、意外等突发情况与组织者无关，组织者不承担任何责任。有心脑血管等基础疾病或疲劳、饮酒等情况，禁止报名。建议自行购买运动险。\n",
+            "joinTime": 1770557277000,
+            "role": 1
         }
-
-        appGroupService.sendMessage(groupId, user.getId(), content, type);
-        object.setSuccess();
-        return object;
-    }
-
-    @ApiOperation(value = "获取消息列表", notes = "获取消息列表")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
-            @ApiImplicitParam(name = "groupId", value = "群ID", required = true, dataType = "Long")
-    })
-    @RequestMapping(value = "/message/list", method = RequestMethod.GET)
-    @ResponseBody
-    public RespJsonObject getMessages(String rdsession, Long groupId) {
-        RespJsonObject object = new RespJsonObject();
-        String openid = stringRedisTemplate.opsForValue().get(rdsession);
-        User user = userService.getUser(openid);
-        if (user == null) {
-            object.setRespCode("40022");
-            object.setRespMessage("该用户不存在");
-            return object;
+    ],
+    "historyGroups": [
+        {
+            "groupId": 10,
+            "groupName": "活动-674416",
+            "ownerId": 53,
+            "createTime": 1770557309000,
+            "activityId": 674416,
+            "status": 3,
+            "activeDate": 1770554700000,
+            "bollPark": "ps5",
+            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20260125/176934298720579068.jpg",
+            "remark": "今晚【8:45】日常开球。少于【8】人活动取消。",
+            "joinTime": 1770557315000,
+            "role": 1
+        },
+        {
+            "groupId": 8,
+            "groupName": "活动-672361",
+            "ownerId": 53,
+            "createTime": 1770545147000,
+            "activityId": 672361,
+            "status": 3,
+            "activeDate": 1770444000000,
+            "bollPark": "体工队",
+            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20251204/176483244768285434.jpeg",
+            "remark": "北五环俱乐部活动，室外新场地，每人立减30元，20元/人，和“兄弟联”足球队友谊赛。请大家扫码添加大志企业微信后用优惠价报名~。 1.活动开始前2小时内请假不退款！ 2.提前10分钟到场以便准时开球。 3.迟到可能失去踢球位置且被标记鸽子。 4. 请自带够饮用水，防止水分流失。 5.【严禁】任何暴力行为和挑衅语言。请尊重对手和你的队友。 6.需要一位志愿者，协调活动现场有序进行，增强有球活动体验感。志愿者权益和责任详见留言板，有意愿的参与者请尽早联系活动组织者。 《免责协议》 你已经了解足球是一项有一定危险性的体育运动，如出现受伤、意外等问题活动组织方不承担责任。有心脑血管等基础疾病或疲劳、饮酒等情况，请自觉不要报名参加。运动中必须注意动作，保护自己，避免伤人，如有不适，请立即休息。强烈建议买运动险，报名即同意自身安全责任自行承担。",
+            "joinTime": 1770545148000,
+            "role": 1
+        },
+        {
+            "groupId": 7,
+            "groupName": "活动-672364",
+            "ownerId": 53,
+            "createTime": 1770544591000,
+            "activityId": 672364,
+            "status": 3,
+            "activeDate": 1770458400000,
+            "bollPark": "本土王牌LIVE",
+            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20251204/176483244768285434.jpeg",
+            "remark": "东北俱乐部活动，室内草地场，每人立减25元，50元/人，和场地会员队友谊赛。请大家扫码添加大志企业微信后用优惠价报名~。 1.活动开始前2小时内请假不退款！ 2.提前10分钟到场以便准时开球。 3.迟到可能失去踢球位置且被标记鸽子。 4. 请自带够饮用水，防止水分流失。 5.【严禁】任何暴力行为和挑衅语言。请尊重对手和你的队友。 6.需要一位志愿者，协调活动现场有序进行，增强有球活动体验感。志愿者权益和责任详见留言板，有意愿的参与者请尽早联系活动组织者。 《免责协议》 你已经了解足球是一项有一定危险性的体育运动，如出现受伤、意外等问题活动组织方不承担责任。有心脑血管等基础疾病或疲劳、饮酒等情况，请自觉不要报名参加。运动中必须注意动作，保护自己，避免伤人，如有不适，请立即休息。强烈建议买运动险，报名即同意自身安全责任自行承担。",
+            "joinTime": 1770544591000,
+            "role": 1
         }
-
-        List<AppGroupMessage> messages = appGroupService.getMessages(groupId);
-        object.put("messages", messages);
-        object.setSuccess();
-        return object;
-    }
+    ],
+    "respCode": "0"
 }

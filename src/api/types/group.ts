@@ -96,3 +96,36 @@ export interface SendMessageResponse extends BaseApiResponse {
 export interface GetMessagesResponse extends BaseApiResponse {
   messages: AppGroupMessage[];
 }
+
+/**
+ * 获取我的群组相关类型
+ */
+
+// 群组活动信息（来自后端API）
+export interface GroupActivityInfo {
+  groupId: number;
+  groupName: string;
+  ownerId: number;
+  createTime: number;
+  activityId: number;
+  status: number; // 1=进行中, 3=已结束
+  activeDate: number;
+  bollPark: string;
+  headimgurl: string;
+  remark: string;
+  joinTime: number;
+  role: number;
+  memberHeadimgurls: string[]; // 群成员头像URL列表
+}
+
+// 获取我的群组的参数
+export interface GetMyGroupsParams {
+  page?: number;
+  size?: number;
+}
+
+// 获取我的群组的响应
+export interface GetMyGroupsResponse extends BaseApiResponse {
+  recruitingGroups: GroupActivityInfo[];
+  historyGroups: GroupActivityInfo[];
+}

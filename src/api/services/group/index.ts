@@ -26,12 +26,37 @@ import type {
   KickMemberResponse,
   SendMessageResponse,
   GetMessagesResponse,
+  GetMyGroupsParams,
+  GetMyGroupsResponse,
+  GroupActivityInfo,
 } from '../../types';
 
 /**
  * 群组服务
  */
 export class GroupService {
+  /**
+   * 获取我的群组（分为进行中和历史）
+   */
+  static async getMyGroups(params: GetMyGroupsParams = {}): Promise<{ recruitingGroups: GroupActivityInfo[]; historyGroups: GroupActivityInfo[] } | null> {
+    try {
+      const result = await request<GetMyGroupsResponse>(
+        'getMyGroups',
+        {
+          page: params.page ?? 1,
+          size: params.size ?? 10,
+        },
+        { showErrorAlert: false }
+      );
+      return {
+        recruitingGroups: result?.recruitingGroups ?? [],
+        historyGroups: result?.historyGroups ?? [],
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
   /**
    * 查询活动对应的群
    */
@@ -167,6 +192,9 @@ export class GroupService {
 }
 
 // 导出便捷函数
+export const getMyGroups = (params?: GetMyGroupsParams) =>
+  GroupService.getMyGroups(params);
+
 export const getGroupByActivity = (activityId: number | string) =>
   GroupService.getGroupByActivity({ activityId });
 
@@ -196,5 +224,8 @@ export type {
   GroupCreateResponse,
   GroupInfoResponse,
   GroupQueryResponse,
-  AddMemberResponse
+  AddMemberResponse,
+  GetMyGroupsParams,
+  GetMyGroupsResponse,
+  GroupActivityInfo
 } from '../../types';

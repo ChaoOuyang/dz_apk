@@ -18,7 +18,7 @@ const MOCK_KEYWORDS = ['周末', '活动', '足球', '球'];
 const MOCK_RESPONSE = {
   content: "为您推荐北京多个区域的周末足球活动，涵盖室内外多种场地，均有不同程度的优惠，价格实惠，您可以查看下方活动卡片，挑选合适的活动报名。",
   outputMap: {
-    activityIds: [672361, 672364]
+    activityIds: [674606, 672364]
   }
 };
 

@@ -49,4 +49,7 @@ export type {
   KickMemberResponse,
   SendMessageResponse,
   GetMessagesResponse,
+  GetMyGroupsParams,
+  GetMyGroupsResponse,
+  GroupActivityInfo,
 } from './group';
