@@ -1,5 +1,11 @@
 /**
  * 群组相关API服务
+ * 
+ * 统一的错误处理约定：
+ * 1. 所有请求都通过 request 函数处理，自动验证 respCode
+ * 2. 当 respCode !== "0" 时，request 函数会抛出异常
+ * 3. 调用方使用 try-catch 捕获异常，或传入 showErrorAlert 选项控制错误提示
+ * 4. 返回值：成功时返回业务数据，失败时返回 null
  */
 
 import { request } from '../../core';
@@ -86,30 +92,39 @@ export class GroupService {
 
   /**
    * 拉用户进群
+   * 
+   * 当 respCode 为 "0" 时请求成功，request 函数会返回响应数据
+   * 当 respCode 不为 "0" 时，request 函数会抛出异常
    */
   static async addMemberToGroup(params: AddMemberParams): Promise<boolean> {
     try {
       const result = await request<AddMemberResponse>(
         'addMemberToGroup',
         { groupId: params.groupId },
-        { showErrorAlert: false }
+        { showErrorAlert: true }
       );
-      return result?.success ?? false;
+      // request 函数已验证 respCode 为 "0"，所以这里只需检查返回值是否存在
+      return !!result;
     } catch {
+      // 异常已由 request 函数处理（如果 showErrorAlert 为 true，已显示错误提示）
       return false;
     }
   }
 
   /**
    * 踢出群成员
+   * 
+   * 当 respCode 为 "0" 时请求成功
    */
   static async kickMember(params: KickMemberParams): Promise<boolean> {
     try {
       const result = await request<KickMemberResponse>(
         'kickMember',
-        { groupId: params.groupId, userId: params.userId }
+        { groupId: params.groupId, userId: params.userId },
+        { showErrorAlert: true }
       );
-      return result?.success ?? false;
+      // request 函数已验证 respCode 为 "0"，所以返回 true
+      return !!result;
     } catch {
       return false;
     }
@@ -117,14 +132,18 @@ export class GroupService {
 
   /**
    * 发送群消息
+   * 
+   * 当 respCode 为 "0" 时请求成功
    */
   static async sendMessage(params: SendMessageParams): Promise<boolean> {
     try {
       const result = await request<SendMessageResponse>(
         'sendMessage',
-        { groupId: params.groupId, content: params.content, type: params.type }
+        { groupId: params.groupId, content: params.content, type: params.type },
+        { showErrorAlert: true }
       );
-      return result?.success ?? false;
+      // request 函数已验证 respCode 为 "0"，所以返回 true
+      return !!result;
     } catch {
       return false;
     }
@@ -171,3 +190,11 @@ export const sendMessage = (groupId: number | string, content: string, type: num
 
 export const getMessages = (groupId: number | string) =>
   GroupService.getMessages({ groupId });
+
+export type {
+  AppGroup,
+  GroupCreateResponse,
+  GroupInfoResponse,
+  GroupQueryResponse,
+  AddMemberResponse
+} from '../../types';
