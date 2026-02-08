@@ -90,7 +90,6 @@ export class CozeApi {
   ) {
     // 检查是否应该使用 mock 数据
     if (shouldUseMock(userMessage)) {
-      console.log('[CozeApi] Using mock response for message:', userMessage);
       simulateStreamResponse(callback, conversationId);
       return;
     }
@@ -149,14 +148,12 @@ export class CozeApi {
     };
 
     xhr.onload = () => {
-      console.log(`[CozeApi] Response Status: ${xhr.status}`);
       if (xhr.status >= 200 && xhr.status < 300) {
         // Final processing if anything remains
         // Then call onSuccess
         callback.onSuccess(currentConversationId || '', fullReply, outputMap, subIntent);
         callback.onComplete();
       } else {
-        console.error(`[CozeApi] Response Error Body: ${xhr.responseText}`);
         let errorMsg = 'Unknown Error';
         try {
             const err = JSON.parse(xhr.responseText);
@@ -169,11 +166,9 @@ export class CozeApi {
     };
 
     xhr.onerror = () => {
-      console.error('[CozeApi] Network Error');
       callback.onError('NETWORK_ERROR', 'Network request failed');
     };
 
-    console.log('[CozeApi] Request Body:', JSON.stringify(requestBody, null, 2));
     xhr.send(JSON.stringify(requestBody));
   }
 }
@@ -223,7 +218,6 @@ function handleSseMessage(
     callback: StreamCallback,
     updateState: (convId?: string, replyPart?: string, outputMap?: string, subIntent?: string) => void
 ) {
-    console.log(`[CozeApi] Event: ${event}, Data: ${data}`);
     if (data === '[DONE]') return;
 
     try {
@@ -251,6 +245,6 @@ function handleSseMessage(
         }
 
     } catch (e) {
-        console.error('[CozeApi] Error parsing message:', e, 'data:', data);
+        // 消息解析失败，继续处理
     }
 }

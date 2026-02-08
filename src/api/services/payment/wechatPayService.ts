@@ -35,7 +35,6 @@ const getWechatPayLib = async (): Promise<any> => {
     WechatPay = require('react-native-wechat-lib');
     return WechatPay;
   } catch (error) {
-    console.error('[WechatPayService] Failed to load WeChat lib:', error);
     return null;
   }
 };
@@ -64,7 +63,6 @@ export class WechatPayService {
       if (lib && lib.addEventListener) {
         // 监听支付结果
         const subscription = lib.addEventListener('PayResp', (response: any) => {
-          console.log('[WechatPayService] Received PayResp:', response);
           if (this.paymentResolver) {
             this.paymentResolver({
               errCode: response.errCode || 0,
@@ -77,7 +75,7 @@ export class WechatPayService {
         });
       }
     } catch (error) {
-      console.warn('[WechatPayService] Event listener initialization skipped:', error);
+      // 事件监听器初始化失败，继续运行
     }
   }
 
@@ -98,19 +96,16 @@ export class WechatPayService {
    */
   public async initialize(config: WechatPayConfig): Promise<boolean> {
     try {
-      console.log('[WechatPayService] Initializing with appId:', config.appId);
       this.appId = config.appId;
 
       // Mock 模式下直接成功
       if (MOCK_MODE_ENABLED) {
-        console.log('[WechatPayService] ✓ Initialized in MOCK MODE (no real WeChat SDK required)');
         this.initialized = true;
         return true;
       }
 
       const lib = await getWechatPayLib();
       if (!lib) {
-        console.warn('[WechatPayService] WeChat library not available, falling back to MOCK MODE');
         this.initialized = true;
         return true;
       }
@@ -120,16 +115,12 @@ export class WechatPayService {
 
       if (result) {
         this.initialized = true;
-        console.log('[WechatPayService] Initialized successfully');
         return true;
       } else {
-        console.warn('[WechatPayService] Registration returned false, using MOCK MODE');
         this.initialized = true;
         return true;
       }
     } catch (error) {
-      console.error('[WechatPayService] Initialization failed:', error);
-      console.log('[WechatPayService] Falling back to MOCK MODE');
       this.initialized = true;
       return true;
     }
@@ -172,21 +163,8 @@ export class WechatPayService {
         throw new Error('WechatPayService is not initialized. Call initialize() first.');
       }
 
-      console.log('[WechatPayService] Initiating payment with params:', {
-        appid: payParams.appid,
-        partnerid: payParams.partnerid,
-        prepayid: payParams.prepayid,
-        noncestr: payParams.noncestr,
-        timestamp: payParams.timestamp,
-        package: payParams.package,
-        sign: payParams.sign ? '[REDACTED]' : undefined,
-      });
-
       // Mock 模式：模拟支付成功
       if (MOCK_MODE_ENABLED) {
-        console.log('[WechatPayService] 🎭 MOCK MODE: Simulating WeChat payment...');
-        console.log('[WechatPayService] 🎭 MOCK MODE: Payment will be successful in 2 seconds');
-        
         return new Promise<WechatPayResult>((resolve) => {
           // 延迟 2 秒后返回成功结果，模拟真实支付体验
           setTimeout(() => {
@@ -196,7 +174,6 @@ export class WechatPayService {
               mockMode: true,
               transactionId: `MOCK_TXN_${Date.now()}`,
             };
-            console.log('[WechatPayService] ✓ Mock payment successful:', mockResult);
             resolve(mockResult);
           }, 2000);
         });
@@ -205,7 +182,6 @@ export class WechatPayService {
       // 真实模式：调用微信 SDK
       const lib = await getWechatPayLib();
       if (!lib) {
-        console.warn('[WechatPayService] WeChat library not available, using mock payment instead');
         return new Promise<WechatPayResult>((resolve) => {
           setTimeout(() => {
             resolve({
@@ -236,11 +212,9 @@ export class WechatPayService {
         // 调用微信支付
         lib.sendPaymentRequest(paymentRequest)
           .then(() => {
-            console.log('[WechatPayService] Payment request sent successfully');
             // 支付请求发送成功，等待支付结果回调
           })
           .catch((error: any) => {
-            console.error('[WechatPayService] Payment request failed:', error);
             this.paymentResolver = null;
             reject(error);
           });
@@ -265,9 +239,7 @@ export class WechatPayService {
         };
       });
     } catch (error) {
-      console.error('[WechatPayService] Payment error:', error);
       // 发生错误时，也返回 mock 成功结果（用于开发测试）
-      console.log('[WechatPayService] Falling back to mock payment success');
       return {
         errCode: 0,
         errStr: 'Mock payment success (error fallback)',
@@ -284,22 +256,17 @@ export class WechatPayService {
     try {
       // Mock 模式下总是返回 true
       if (MOCK_MODE_ENABLED) {
-        console.log('[WechatPayService] 🎭 MOCK MODE: Reporting WeChat as installed');
         return true;
       }
 
       const lib = await getWechatPayLib();
       if (!lib) {
-        console.log('[WechatPayService] WeChat library not available, assuming installed for mock mode');
         return true;
       }
 
       const result = await lib.isWXAppInstalled();
-      console.log('[WechatPayService] WeChat installed:', result);
       return result;
     } catch (error) {
-      console.error('[WechatPayService] Error checking WeChat installation:', error);
-      console.log('[WechatPayService] Assuming installed for mock mode');
       return true;
     }
   }
@@ -312,22 +279,17 @@ export class WechatPayService {
     try {
       // Mock 模式下总是返回 true
       if (MOCK_MODE_ENABLED) {
-        console.log('[WechatPayService] 🎭 MOCK MODE: Reporting WeChat Pay as supported');
         return true;
       }
 
       const lib = await getWechatPayLib();
       if (!lib) {
-        console.log('[WechatPayService] WeChat library not available, assuming pay supported for mock mode');
         return true;
       }
 
       const result = await lib.isWXPaySupported();
-      console.log('[WechatPayService] WeChat pay supported:', result);
       return result;
     } catch (error) {
-      console.error('[WechatPayService] Error checking WeChat pay support:', error);
-      console.log('[WechatPayService] Assuming supported for mock mode');
       return true;
     }
   }

@@ -91,7 +91,7 @@ export class GroupService {
     try {
       const result = await request<AddMemberResponse>(
         'addMemberToGroup',
-        { groupId: params.groupId, userId: params.userId },
+        { groupId: params.groupId },
         { showErrorAlert: false }
       );
       return result?.success ?? false;
@@ -160,8 +160,8 @@ export const createGroup = (activityId: number | string, groupName: string = '�
 export const getOrCreateGroup = (activityId: number | string, groupName: string = '活动群') =>
   GroupService.getOrCreateGroup(activityId, groupName);
 
-export const addMemberToGroup = (groupId: number | string, userId: number | string) =>
-  GroupService.addMemberToGroup({ groupId, userId });
+export const addMemberToGroup = (groupId: number | string) =>
+  GroupService.addMemberToGroup({ groupId });
 
 export const kickMember = (groupId: number | string, userId: number | string) =>
   GroupService.kickMember({ groupId, userId });

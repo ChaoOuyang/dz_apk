@@ -3,7 +3,7 @@
  */
 
 export interface AppGroup {
-  groupId: string | number;
+  id: string | number;
   activityId: string | number;
   name: string;
   ownerId: string | number;
@@ -37,7 +37,6 @@ export interface GroupQueryByActivityParams {
 
 export interface AddMemberParams {
   groupId: number | string;
-  userId: number | string;
 }
 
 export interface KickMemberParams {

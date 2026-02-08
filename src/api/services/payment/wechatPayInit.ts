@@ -20,11 +20,8 @@ const WECHAT_APP_ID = 'wx1234567890abcdef';
  */
 export async function initializeWechatPay(): Promise<boolean> {
   try {
-    console.log('[WechatPayInit] Initializing WeChat payment service (mock mode)...');
-
     // 暂时 mock 初始化，不实际调用 wechatPayService
     // 当前返回 true，避免应用启动失败
-    console.log('[WechatPayInit] WeChat payment service initialized (mock)');
     return true;
 
     // 实际初始化代码（已注释，待后续启用）
@@ -33,14 +30,11 @@ export async function initializeWechatPay(): Promise<boolean> {
     // });
     //
     // if (success) {
-    //   console.log('[WechatPayInit] WeChat payment service initialized successfully');
     //   return true;
     // } else {
-    //   console.warn('[WechatPayInit] Failed to initialize WeChat payment service');
     //   return false;
     // }
   } catch (error) {
-    console.error('[WechatPayInit] Error during initialization:', error);
     return false;
   }
 }

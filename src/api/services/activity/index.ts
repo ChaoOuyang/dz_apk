@@ -35,11 +35,8 @@ export async function getActivitySignup(
   try {
     // 如果启用了 mock 数据，直接返回 mock 数据
     if (USE_MOCK_DATA) {
-      console.log(`[getActivitySignup] Using MOCK data for activity ${activityId}`);
-      // 模拟网络延迟
       await mockDelay(MOCK_DELAY_MS);
       const mockData = getActivitySignupMock();
-      console.log(`[getActivitySignup] Mock data for activity ${activityId}:`, mockData);
       return mockData;
     }
 
@@ -56,10 +53,8 @@ export async function getActivitySignup(
       },
       { showErrorAlert: false }
     );
-    console.log(`[getActivitySignup] Success for activity ${activityId}:`, result);
     return result;
   } catch (error) {
-    console.error(`[getActivitySignup] Error fetching activity ${activityId}:`, error);
     // 返回 null 而不是抛出异常，让调用方处理
     return null;
   }
