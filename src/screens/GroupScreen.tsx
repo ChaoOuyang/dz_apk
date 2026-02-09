@@ -13,8 +13,8 @@ import {
   Image,
 } from 'react-native';
 import { theme } from '../theme';
-import { getMyGroups } from '../api/services/group';
-import type { GroupActivityInfo } from '../api/types/group';
+import { getMyGroups } from '../api';
+import type { GroupActivityInfo } from '../api/types';
 
 const HISTORY_GROUPS_PAGE_SIZE = 10;
 
@@ -377,14 +377,14 @@ const GroupScreen = () => {
       ) : (
         <SectionList
           sections={sections}
-          renderItem={({ item }: { item: any }) => <GroupCard item={item} />}
-          renderSectionHeader={({ section: { title } }: { section: any }) => (
+          renderItem={({ item }) => <GroupCard item={item} />}
+          renderSectionHeader={({ section: { title } }) => (
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>{title}</Text>
               <View style={styles.sectionDivider} />
             </View>
           )}
-          keyExtractor={(item: any, index: number) =>
+          keyExtractor={(item, index) =>
             `${item.groupId}-${item.status}-${index}`
           }
           contentContainerStyle={styles.listContent}

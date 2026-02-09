@@ -23,7 +23,8 @@ import { ActivityCardList } from '../components/ActivityCardList';
 import type { ActivityInfo } from '../components/ActivityCard';
 import { ActivityDetailSheet } from '../components/ActivityDetailSheet';
 import { theme } from '../theme';
-import { useHomeScreenContext, type Message } from '../context/HomeScreenContext';
+import { useHomeScreenContext } from '../context/HomeScreenContext';
+import type { Message } from '../context/HomeScreenContext';
 
 const { width } = Dimensions.get('window');
 
@@ -436,7 +437,7 @@ const HomeScreen = () => {
                 ref={flatListRef}
                 data={messages}
                 renderItem={renderMessageItem}
-                keyExtractor={(item: Message) => item.id}
+                keyExtractor={item => item.id}
                 contentContainerStyle={styles.chatListContent}
                 onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}

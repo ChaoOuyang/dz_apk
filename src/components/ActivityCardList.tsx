@@ -58,10 +58,10 @@ export const ActivityCardList: React.FC<ActivityCardListProps> = ({
       
       console.log(`[ActivityCardList] Fetched activity ${activityId}:`, response);
       
-      if (response && response.activity) {
+      if (response) {
         // Extract activity info from response
         // API 返回结构: { activity: {...}, signupers: [...], team: {...}, ... }
-        const activityData = response.activity;
+        const activityData = response.activity || response;
         
         console.log(`[ActivityCardList] Activity data for ${activityId}:`, activityData);
         
@@ -176,7 +176,7 @@ export const ActivityCardList: React.FC<ActivityCardListProps> = ({
       <FlatList
         data={activities}
         renderItem={renderActivityItem}
-        keyExtractor={(item: any) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         scrollEnabled={false}
         nestedScrollEnabled={false}
       />

@@ -5,7 +5,7 @@ targetSdkVersion: 31
 buildToolsVersion: 31.0.0
 ndkVersion: 21.3.6528147
 🔧 Gradle 版本
-Gradle: 8.8
+Gradle: 7.5.1
 Android Gradle Plugin: 7.1.3
 ⚛️ React Native 版本
 React Native: 0.70.0

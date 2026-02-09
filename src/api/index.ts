@@ -45,12 +45,22 @@ export { getActivitySignup } from './services/activity';
 // 群组服务
 export {
   GroupService,
+  getMyGroups,
   getGroupByActivity,
   createGroup,
   getOrCreateGroup,
   addMemberToGroup,
 } from './services/group';
-export type { AppGroup, GroupCreateResponse, GroupInfoResponse, GroupQueryResponse, AddMemberResponse } from './services/group';
+export type { 
+  AppGroup, 
+  GroupCreateResponse, 
+  GroupInfoResponse, 
+  GroupQueryResponse, 
+  AddMemberResponse,
+  GroupActivityInfo,
+  GetMyGroupsParams,
+  GetMyGroupsResponse,
+} from './services/group';
 
 // ============ Mock 数据 ============
 export {

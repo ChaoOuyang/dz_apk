@@ -1,94 +1,104 @@
-后端api的java实现：
-    @ApiOperation(value = "获取我的群组", notes = "获取我的群组，按活动状态分类")
-    @ApiImplicitParams({
-        @ApiImplicitParam(name = "rdsession", value = "用户身份", required = true, dataType = "String"),
-        @ApiImplicitParam(name = "page", value = "页码", required = false, dataType = "Integer", defaultValue = "1"),
-        @ApiImplicitParam(name = "size", value = "每页数量", required = false, dataType = "Integer", defaultValue = "10")
-    })
-    @RequestMapping(value = "/list/my", method = RequestMethod.GET)
-    @ResponseBody
-    public RespJsonObject getMyGroups(String rdsession, @RequestParam(required = false, defaultValue = "1") Integer page, @RequestParam(required = false, defaultValue = "10") Integer size) {
-        RespJsonObject object = new RespJsonObject();
-        String openid = stringRedisTemplate.opsForValue().get(rdsession);
-        User user = userService.getUser(openid);
-        if (user == null) {
-            object.setRespCode("40022");
-            object.setRespMessage("该用户不存在");
-            return object;
-        }
+React Native 项目的目录结构通常分为两个部分：根目录（框架生成的基础设施） 和 源码目录（开发者编写的业务逻辑）。
 
-        List<AppGroupListVo> recruitingGroups = appGroupService.getRecruitingGroups(user.getId());
-        List<AppGroupListVo> historyGroups = appGroupService.getHistoryGroups(user.getId(), page, size);
-        
-        object.put("recruitingGroups", recruitingGroups);
-        object.put("historyGroups", historyGroups);
-        object.setSuccess();
-        return object;
-    }
+React Native 官方脚手架（CLI）生成的项目比较“原生”，而社区通常会约定俗成地创建一个 src 目录来管理代码。
 
-返回结果：
+以下是一个企业级/标准的 React Native 项目目录结构定义与详细解释：
 
-{
-    "respMessage": "请求成功",
-    "recruitingGroups": [
-        {
-            "groupId": 9,
-            "groupName": "活动-674606",
-            "ownerId": 53,
-            "createTime": 1770557269000,
-            "activityId": 674606,
-            "status": 1,
-            "activeDate": 1770895800000,
-            "bollPark": "星优航体育培训基地",
-            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20230919/169512124672940408.jpg",
-            "remark": "早到热身，准点开球。有伤或有早退习惯的禁止参加。禁止提前离场，无故提前离场拉黑。活动开始前4小时内请假仍须缴纳场地费，否则标记鸽子。\n注意：禁止说教他人，主动前后场轮换，有人摔倒不管谁的责任主动伸手拉一把，安全第一，友谊第二，开心最重要。鸽子直接拉黑。rooney198304\n《免责条款》\n报名即视为同意此条款，足球是一项具有一定风险的体育运动，所有参与者风险自担。暨出现受伤、意外等突发情况与组织者无关，组织者不承担任何责任。有心脑血管等基础疾病或疲劳、饮酒等情况，禁止报名。建议自行购买运动险。\n",
-            "joinTime": 1770557277000,
-            "role": 1
-        }
-    ],
-    "historyGroups": [
-        {
-            "groupId": 10,
-            "groupName": "活动-674416",
-            "ownerId": 53,
-            "createTime": 1770557309000,
-            "activityId": 674416,
-            "status": 3,
-            "activeDate": 1770554700000,
-            "bollPark": "ps5",
-            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20260125/176934298720579068.jpg",
-            "remark": "今晚【8:45】日常开球。少于【8】人活动取消。",
-            "joinTime": 1770557315000,
-            "role": 1
-        },
-        {
-            "groupId": 8,
-            "groupName": "活动-672361",
-            "ownerId": 53,
-            "createTime": 1770545147000,
-            "activityId": 672361,
-            "status": 3,
-            "activeDate": 1770444000000,
-            "bollPark": "体工队",
-            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20251204/176483244768285434.jpeg",
-            "remark": "北五环俱乐部活动，室外新场地，每人立减30元，20元/人，和“兄弟联”足球队友谊赛。请大家扫码添加大志企业微信后用优惠价报名~。 1.活动开始前2小时内请假不退款！ 2.提前10分钟到场以便准时开球。 3.迟到可能失去踢球位置且被标记鸽子。 4. 请自带够饮用水，防止水分流失。 5.【严禁】任何暴力行为和挑衅语言。请尊重对手和你的队友。 6.需要一位志愿者，协调活动现场有序进行，增强有球活动体验感。志愿者权益和责任详见留言板，有意愿的参与者请尽早联系活动组织者。 《免责协议》 你已经了解足球是一项有一定危险性的体育运动，如出现受伤、意外等问题活动组织方不承担责任。有心脑血管等基础疾病或疲劳、饮酒等情况，请自觉不要报名参加。运动中必须注意动作，保护自己，避免伤人，如有不适，请立即休息。强烈建议买运动险，报名即同意自身安全责任自行承担。",
-            "joinTime": 1770545148000,
-            "role": 1
-        },
-        {
-            "groupId": 7,
-            "groupName": "活动-672364",
-            "ownerId": 53,
-            "createTime": 1770544591000,
-            "activityId": 672364,
-            "status": 3,
-            "activeDate": 1770458400000,
-            "bollPark": "本土王牌LIVE",
-            "headimgurl": "https://pic.dazhiyouqiu.com/chat/20251204/176483244768285434.jpeg",
-            "remark": "东北俱乐部活动，室内草地场，每人立减25元，50元/人，和场地会员队友谊赛。请大家扫码添加大志企业微信后用优惠价报名~。 1.活动开始前2小时内请假不退款！ 2.提前10分钟到场以便准时开球。 3.迟到可能失去踢球位置且被标记鸽子。 4. 请自带够饮用水，防止水分流失。 5.【严禁】任何暴力行为和挑衅语言。请尊重对手和你的队友。 6.需要一位志愿者，协调活动现场有序进行，增强有球活动体验感。志愿者权益和责任详见留言板，有意愿的参与者请尽早联系活动组织者。 《免责协议》 你已经了解足球是一项有一定危险性的体育运动，如出现受伤、意外等问题活动组织方不承担责任。有心脑血管等基础疾病或疲劳、饮酒等情况，请自觉不要报名参加。运动中必须注意动作，保护自己，避免伤人，如有不适，请立即休息。强烈建议买运动险，报名即同意自身安全责任自行承担。",
-            "joinTime": 1770544591000,
-            "role": 1
-        }
-    ],
-    "respCode": "0"
-}
+1. 整体目录结构概览
+text
+复制
+ProjectName/
+├── android/                 # Android 原生工程目录
+├── ios/                     # iOS 原生工程目录
+├── node_modules/            # npm/yarn 依赖包
+├── src/                     # [核心] 所有的业务源码放在这里
+│   ├── assets/              # 静态资源 (图片, 字体, 图标)
+│   ├── components/          # 公共组件 (非页面级)
+│   ├── constants/           # 常量配置 (颜色, 字体大小, API地址)
+│   ├── hooks/               # 自定义 React Hooks
+│   ├── navigation/          # 路由导航配置
+│   ├── screens/             # 页面/视图 (Screen)
+│   ├── services/            # API 请求与网络层
+│   ├── store/               # 状态管理 (Redux, Zustand, MobX)
+│   ├── theme/               # 全局样式主题配置
+│   ├── types/               # TypeScript 类型定义
+│   └── utils/               # 工具函数
+├── .eslintrc.js             # ESLint 代码规范配置
+├── .gitignore               # Git 忽略文件配置
+├── .prettierrc.js           # Prettier 代码格式化配置
+├── App.tsx                  # 根组件 (通常引入 Provider 和 Navigation)
+├── app.json                 # 项目名称与基本配置
+├── babel.config.js          # Babel 编译配置
+├── index.js                 # 项目入口文件 (注册 AppRegistry)
+├── metro.config.js          # Metro 打包工具配置
+├── package.json             # 项目依赖与脚本清单
+└── tsconfig.json            # TypeScript 配置文件
+2. 根目录文件详解 (Infrastructure)
+这些文件由 React Native CLI 自动生成，主要用于构建环境和原生桥接。
+
+android/ & ios/
+这是真正的原生工程文件。
+当你运行 react-native run-ios 或 run-android 时，实际上是在编译这两个文件夹里的代码。
+注意：通常只有在需要链接原生库（Native Modules）、修改应用图标、配置启动屏或修改权限（AndroidManifest.xml / Info.plist）时，才会修改这里的内容。
+index.js
+入口文件。这是 JS 也就是 React Native 运行时的起点。
+它使用 AppRegistry.registerComponent 将你的根组件（通常是 App）挂载到原生的 View 上。
+App.tsx
+根组件。通常在这里配置全局的 Context Provider（如 Redux Provider, Theme Provider）以及引入根导航器（Root Navigator）。
+metro.config.js
+React Native 使用 Metro 作为打包工具（类似于 Web 开发中的 Webpack）。
+如果需要配置路径别名（Alias）、处理 SVG 导入或自定义打包逻辑，需要修改此文件。
+babel.config.js
+配置 JS/TS 的转译规则。常用于配置插件（如 react-native-reanimated 需要在此配置插件）。
+3. src 目录详解 (Business Logic)
+这是开发者 99% 的时间都在工作的目录。React Native 并不强制要求这个结构，但这是社区公认的最佳实践。
+
+assets/ (资源)
+存放静态文件。
+
+images/: 图片文件（png, jpg）。
+fonts/: 自定义字体文件。
+icons/: 如果不使用矢量图标库，SVG 或图标图片放这里。
+components/ (组件)
+存放可复用的 UI 组件（Dumb Components）。
+
+这些组件通常只负责展示，不包含复杂的业务逻辑或 API 请求。
+例如：Button.tsx, Card.tsx, Header.tsx, Input.tsx。
+screens/ (页面)
+存放页面级组件（Smart Components / Containers）。
+
+对应 App 中的一个完整屏幕。
+通常在这里处理 API 调用、获取数据，并将数据传递给 components 进行渲染。
+例如：HomeScreen.tsx, ProfileScreen.tsx, LoginScreen.tsx。
+navigation/ (导航)
+存放 React Navigation 的配置。
+
+AppNavigator.tsx: 定义 Stack, Tab, Drawer 导航结构。
+LinkingConfiguration.ts: 配置 Deep Linking（深度链接）。
+services/ (服务/网络)
+存放与后端交互的代码。
+
+api.ts: Axios 或 Fetch 的封装（拦截器、Token 处理）。
+auth.ts: 专门处理登录注册的 API。
+user.ts: 用户相关的 API。
+store/ (状态管理)
+存放全局状态管理逻辑（Redux Toolkit, Zustand, MobX, Recoil）。
+
+如果是 Redux：通常包含 slices/ (Reducers) 和 store.ts。
+hooks/ (钩子)
+存放自定义 React Hooks。
+
+用于抽离组件中的逻辑，实现逻辑复用。
+例如：useAuth.ts (获取当前用户), useTheme.ts (获取主题色), useLocation.ts。
+utils/ (工具)
+存放纯函数工具类。
+
+date.ts: 日期格式化。
+validation.ts: 表单验证（邮箱、手机号正则）。
+storage.ts: 对 AsyncStorage 或 MMKV 的封装。
+constants/ (常量)
+存放全局静态配置。
+
+Colors.ts: 定义 App 的颜色系统（主色、背景色）。
+Config.ts: 环境变量或 API URL。
+Strings.ts: 国际化文案或静态文本。

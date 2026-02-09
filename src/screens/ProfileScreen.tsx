@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { theme } from '../theme';
 import { useUserContext } from '../context/UserContext';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../context/AppContext';
 import EditProfileScreen from './EditProfileScreen';
 import { useWeChat } from '../hooks/useWeChat';
 
