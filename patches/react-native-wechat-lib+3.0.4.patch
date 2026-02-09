@@ -1,0 +1,37 @@
+diff --git a/node_modules/react-native-wechat-lib/android/build.gradle b/node_modules/react-native-wechat-lib/android/build.gradle
+index ed9f33b..5b0b4b3 100644
+--- a/node_modules/react-native-wechat-lib/android/build.gradle
++++ b/node_modules/react-native-wechat-lib/android/build.gradle
+@@ -15,9 +15,10 @@ def isNewArchitectureEnabled() {
+ 
+ apply plugin: "com.android.library"
+ 
+-if (isNewArchitectureEnabled()) {
+-  apply plugin: "com.facebook.react"
+-}
++// Temporarily disable this plugin for React Native 0.70 compatibility
++// if (isNewArchitectureEnabled()) {
++//   apply plugin: "com.facebook.react"
++// }
+ 
+ def getExtOrDefault(name) {
+   return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["WechatLib_" + name]
+@@ -66,10 +67,11 @@ dependencies {
+   api group: 'com.tencent.mm.opensdk', name: 'wechat-sdk-android', version: '6.8.20'
+ }
+ 
+-if (isNewArchitectureEnabled()) {
+-  react {
+-    jsRootDir = file("../src/")
+-    libraryName = "WechatLib"
+-    codegenJavaPackageName = "com.wechatlib"
+-  }
+-}
++// Temporarily disable this for React Native 0.70 compatibility
++// if (isNewArchitectureEnabled()) {
++//   react {
++//     jsRootDir = file("../src/")
++//     libraryName = "WechatLib"
++//     codegenJavaPackageName = "com.wechatlib"
++//   }
++// }

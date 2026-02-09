@@ -9,16 +9,23 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { theme } from '../theme';
 import { useUserContext } from '../context/UserContext';
 import { useAppContext } from '../../App';
 import EditProfileScreen from './EditProfileScreen';
+import { useWeChat } from '../hooks/useWeChat';
 
 const ProfileScreen = () => {
-  const { user } = useUserContext();
+  const { user, updateUserProfile } = useUserContext();
   const { setShowTabBar } = useAppContext();
+  const { sendAuthRequest } = useWeChat();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // 配置参考：https://jueljin.cn/post/7541714394016792585
+  // SDK 初始化和事件监听已在 App.tsx 中进行
 
   useEffect(() => {
     if (showEditModal) {
@@ -30,6 +37,39 @@ const ProfileScreen = () => {
       setShowTabBar(true);
     };
   }, [showEditModal, setShowTabBar]);
+
+  const handleWeChatLogin = async () => {
+    try {
+      setIsLoggingIn(true);
+
+      // 4.2 使用 useWeChat Hook 发送登录请求
+      const response = await sendAuthRequest('snsapi_userinfo', 'wechat_sdk_demo');
+
+      console.log('WeChat login response:', response);
+
+      if (response && response.errCode === 0 && response.code) {
+        // 登录成功
+        // 在实际应用中，这里应该将 response.code 发送到后端服务器
+        // 后端服务器使用 code 换取 access_token 和 openid，然后获取用户信息
+
+        console.log('WeChat Authorization Code:', response.code);
+        Alert.alert('登录成功', `Code: ${response.code}\n\n(已打印到控制台，请在后端使用此Code)`);
+
+        // 这里仅做前端模拟
+        updateUserProfile({
+          nickname: '微信用户',
+        });
+      } else if (response) {
+        // 登录失败
+        Alert.alert('失败', '登录失败: ' + (response.errStr || '未知错误'));
+      }
+    } catch (error: any) {
+      console.error('WeChat login error:', error);
+      Alert.alert('错误', '登录发生错误: ' + error.message);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   if (showEditModal) {
     return <EditProfileScreen onBackPress={() => setShowEditModal(false)} />;
@@ -81,6 +121,20 @@ const ProfileScreen = () => {
 
           <TouchableOpacity style={styles.optionItem}>
             <Text style={styles.optionLabel}>关于我们</Text>
+            <Text style={styles.optionArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* WeChat Login */}
+        <View style={[styles.optionsSection, { marginTop: 20 }]}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={handleWeChatLogin}
+            disabled={isLoggingIn}
+          >
+            <Text style={[styles.optionLabel, isLoggingIn && { opacity: 0.6 }]}>
+              {isLoggingIn ? '登录中...' : '微信登录'}
+            </Text>
             <Text style={styles.optionArrow}>›</Text>
           </TouchableOpacity>
         </View>

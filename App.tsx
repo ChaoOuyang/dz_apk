@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   StatusBar,
   useColorScheme,
+  DeviceEventEmitter,
 } from 'react-native';
+import * as WeChat from 'react-native-wechat-lib';
 
 import HomeScreen from './src/screens/HomeScreen';
 import GroupScreen from './src/screens/GroupScreen';
@@ -48,6 +50,36 @@ function AppContent(): React.JSX.Element {
   const [targetGroupId, setTargetGroupId] = useState<string | number | null>(null);
   const [targetGroupName, setTargetGroupName] = useState<string | null>(null);
   const [targetActivityId, setTargetActivityId] = useState<number | null>(null);
+
+  // 4.1 初始化 SDK 与事件监听
+  useEffect(() => {
+    // WeChat AppID 和 Universal Link 配置
+    const WECHAT_APPID = 'wx46279c0318624f78'; // 🚨 生产环境请替换为实际的 AppID
+    const WECHAT_UNIVERSALLINK = 'https://your.domain.com/app/'; // 🚨 生产环境请替换为实际的 Universal Link
+
+    // 1. 注册 App
+    WeChat.registerApp(WECHAT_APPID, WECHAT_UNIVERSALLINK);
+
+    // 2. 添加事件监听
+    const wechatRespListener = DeviceEventEmitter.addListener('WeChat_Resp', (resp) => {
+      console.log('收到微信回调', resp);
+      // resp.type === 'SendMessageToWX.Resp' // 分享
+      // resp.type === 'PayReq.Resp' // 支付
+      // resp.type === 'SendAuth.Resp' // 登录
+      if (resp.errCode === 0) {
+        // 根据 resp.type 处理成功逻辑
+        console.log('微信操作成功:', resp.type);
+      } else {
+        // 处理失败逻辑
+        console.log('微信操作失败，错误码:', resp.errCode);
+      }
+    });
+
+    return () => {
+      // 移除监听
+      wechatRespListener.remove();
+    };
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
