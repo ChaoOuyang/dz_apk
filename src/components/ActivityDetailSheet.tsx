@@ -58,17 +58,17 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
+      onMoveShouldSetPanResponder: (_: any, gestureState: any) => {
         // 只在竖直方向滑动时响应，避免与按钮点击冲突
         return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
-      onPanResponderMove: (_, gestureState) => {
+      onPanResponderMove: (_: any, gestureState: any) => {
         // 只允许向下滑动
         if (gestureState.dy > 0) {
           slideAnim.setValue(screenHeight - SHEET_HEIGHT + gestureState.dy);
         }
       },
-      onPanResponderRelease: (_, gestureState) => {
+      onPanResponderRelease: (_: any, gestureState: any) => {
         // 如果向下滑动超过一定距离，关闭
         if (gestureState.dy > 100) {
           onClose();

@@ -377,14 +377,14 @@ const GroupScreen = () => {
       ) : (
         <SectionList
           sections={sections}
-          renderItem={({ item }) => <GroupCard item={item} />}
-          renderSectionHeader={({ section: { title } }) => (
+          renderItem={({ item }: { item: any }) => <GroupCard item={item} />}
+          renderSectionHeader={({ section: { title } }: { section: any }) => (
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>{title}</Text>
               <View style={styles.sectionDivider} />
             </View>
           )}
-          keyExtractor={(item, index) =>
+          keyExtractor={(item: any, index: number) =>
             `${item.groupId}-${item.status}-${index}`
           }
           contentContainerStyle={styles.listContent}

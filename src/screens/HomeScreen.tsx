@@ -436,7 +436,7 @@ const HomeScreen = () => {
                 ref={flatListRef}
                 data={messages}
                 renderItem={renderMessageItem}
-                keyExtractor={item => item.id}
+                keyExtractor={(item: Message) => item.id}
                 contentContainerStyle={styles.chatListContent}
                 onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}

@@ -20,7 +20,7 @@ export interface PaymentPayload {
 
 // 微信登录返回的结果
 export interface WeChatAuthResult {
-  errCode: number;
+  errCode?: number;
   errStr?: string;
   code?: string;
   state?: string;
@@ -64,9 +64,12 @@ export function useWeChat() {
     if (!(await checkInstall())) return;
     try {
       await WeChat.shareWebpage({
-        scene: ShareScene.Session,
-        ...options,
-      });
+        scene: options.scene ?? ShareScene.Session,
+        title: options.title,
+        description: options.description,
+        thumbImageUrl: options.thumbImageUrl,
+        webpageUrl: options.webpageUrl,
+      } as any);
     } catch (e) {
       console.error('分享失败', e);
       Alert.alert('分享失败', '请稍后重试');

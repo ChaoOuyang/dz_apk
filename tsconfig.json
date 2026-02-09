@@ -1,8 +1,12 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
+    "lib": ["es2020", "dom"],
     "types": ["jest"],
+    "esModuleInterop": true,
+    "jsx": "react-native",
+    "downlevelIteration": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  "exclude": ["**/node_modules", "**/Pods", "react-native-wechat-lib-master"]
 }
