@@ -1,29 +1,42 @@
 package com.dazhiyouqiu.app
 
 import android.app.Application
+import android.content.Context
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
-import com.facebook.react.ReactHost
-import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
-import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
-import com.theweflex.react.WeChatPackage
+import com.facebook.react.ReactInstanceManager
+import com.facebook.react.ReactNativeHost
+import com.facebook.react.ReactPackage
+import com.facebook.react.config.ReactFeatureFlags
+import com.facebook.soloader.SoLoader
+import com.wechatlib.WeChatLibPackage // 导入微信包
 
 class MainApplication : Application(), ReactApplication {
 
-  override val reactHost: ReactHost by lazy {
-    getDefaultReactHost(
-      context = applicationContext,
-      packageList =
-        PackageList(this).packages.apply {
-          // Packages that cannot be autolinked yet can be added manually here, for example:
-          // add(MyReactNativePackage())
-          add(WeChatPackage())
-        },
-    )
+  private val mReactNativeHost: ReactNativeHost = object : ReactNativeHost(this@MainApplication) {
+    override fun getPackages(): List<ReactPackage> {
+      val packages: MutableList<ReactPackage> = PackageList(this@MainApplication).packages
+      // Packages that cannot be autolinked yet can be added manually here, for example:
+      // packages.add(MyReactNativePackage())
+      packages.add(WeChatLibPackage())
+      return packages
+    }
+
+    override fun getJSMainModuleName(): String {
+      return "index"
+    }
+
+    override fun getUseDeveloperSupport(): Boolean {
+      return BuildConfig.DEBUG
+    }
+  }
+
+  override fun getReactNativeHost(): ReactNativeHost {
+    return mReactNativeHost
   }
 
   override fun onCreate() {
     super.onCreate()
-    loadReactNative(this)
+    SoLoader.init(this, false)
   }
 }
