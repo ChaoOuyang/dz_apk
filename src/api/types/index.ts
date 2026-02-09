@@ -18,16 +18,6 @@ export type {
   OriginatorPersonTime,
 } from './activity';
 
-// 支付相关类型
-export type {
-  WechatPayConfig,
-  WechatPayRequest,
-  WechatPayResult,
-  WechatPayParams,
-  WechatPayResponse,
-  WechatPayFlowConfig,
-} from './payment';
-
 // Coze 相关类型
 export type { HistoryMessage, StreamCallback } from './coze';
 

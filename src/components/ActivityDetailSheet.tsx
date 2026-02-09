@@ -16,10 +16,6 @@ import {
 } from 'react-native';
 import type { ActivityInfo } from './ActivityCard';
 import { theme } from '../theme';
-import { payForActivity, handlePostPaymentGroupLogic } from '../api';
-import { PaymentSuccessModal } from './PaymentSuccessModal';
-import { useAppContext } from '../../App';
-import { useUserContext } from '../context/UserContext';
 
 interface ActivityDetailSheetProps {
   visible: boolean;
@@ -40,11 +36,6 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
   isLoading = false,
 }) => {
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
-  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successModalLoading, setSuccessModalLoading] = useState(false);
-  const appContext = useAppContext();
-  const { user } = useUserContext();
 
   useEffect(() => {
     if (visible) {
@@ -100,91 +91,12 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
     onSignup('pending');
   };
 
-  /**
-   * 处理支付成功后的群逻辑
-   */
-  const handleSuccessModalConfirm = async () => {
-    if (!activity) {
-      console.error('[ActivityDetailSheet] No activity for group handling');
-      return;
-    }
 
-    setSuccessModalLoading(true);
-    console.log('[ActivityDetailSheet] Handling post-payment group logic');
 
-    try {
-      // 获取或创建群，并拉用户进群
-      const groupId = await handlePostPaymentGroupLogic(activity.activityId, user.id);
-
-      if (groupId) {
-        console.log('[ActivityDetailSheet] Successfully handled group logic, groupId:', groupId);
-        // 更新 AppContext 中的群信息
-        appContext.setTargetGroupId(groupId);
-        appContext.setTargetGroupName(`${activity.activityName}`);
-        appContext.setTargetActivityId(activity.activityId);
-        // 切换到群聊 tab
-        appContext.setActiveTab('group');
-      } else {
-        console.error('[ActivityDetailSheet] Failed to handle group logic');
-        Alert.alert('提示', '加入群聊失败，请重试');
-      }
-    } catch (error) {
-      console.error('[ActivityDetailSheet] Error handling group logic:', error);
-      Alert.alert('错误', '处理群聊时出现错误');
-    } finally {
-      setSuccessModalLoading(false);
-      setShowSuccessModal(false);
-      onClose();
-    }
-  };
-
-  /**
-   * 处理微信支付
-   * 使用支付工具函数完成整个支付流程
-   */
-  const handleWechatPayment = async () => {
-    if (!activity) {
-      console.error('[ActivityDetailSheet] No activity selected for payment');
-      return;
-    }
-
-    setIsPaymentLoading(true);
-    console.log('[ActivityDetailSheet] Starting WeChat payment for activity:', activity.activityId);
-
-    await payForActivity(activity.activityId, {
-      type: 1,
-      privateInsurance: 0,
-      phone: '',
-      name: '',
-      idCard: '',
-      onSuccess: () => {
-        setIsPaymentLoading(false);
-        console.log('[ActivityDetailSheet] Payment successful, showing success modal');
-        // 显示支付成功弹窗
-        setShowSuccessModal(true);
-      },
-      onCancel: () => {
-        setIsPaymentLoading(false);
-        console.log('[ActivityDetailSheet] User cancelled payment');
-      },
-      onError: (errorMsg) => {
-        setIsPaymentLoading(false);
-        console.error('[ActivityDetailSheet] Payment error:', errorMsg);
-      },
-    });
-  };
-
-  if (!visible && !showSuccessModal) return null;
+  if (!visible) return null;
 
   return (
     <>
-      {/* 支付成功弹窗 */}
-      <PaymentSuccessModal
-        visible={showSuccessModal}
-        activityName={activity?.activityName || '活动'}
-        onConfirm={handleSuccessModalConfirm}
-        isLoading={successModalLoading}
-      />
 
       <Modal
         transparent
@@ -292,24 +204,12 @@ export const ActivityDetailSheet: React.FC<ActivityDetailSheetProps> = ({
                 <TouchableOpacity
                   style={[styles.button, styles.buttonPending]}
                   onPress={handlePendingSignup}
-                  disabled={isLoading || isPaymentLoading}
+                  disabled={isLoading}
                 >
                   {isLoading ? (
                     <ActivityIndicator color={theme.colors.primary} size="small" />
                   ) : (
                     <Text style={styles.buttonTextSecondary}>进群咨询</Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.button, styles.buttonSignup]}
-                  onPress={handleWechatPayment}
-                  disabled={isLoading || isPaymentLoading}
-                >
-                  {isPaymentLoading ? (
-                    <ActivityIndicator color="white" size="small" />
-                  ) : (
-                    <Text style={styles.buttonTextPrimary}>微信支付报名</Text>
                   )}
                 </TouchableOpacity>
               </View>

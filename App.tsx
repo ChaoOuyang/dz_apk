@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -16,7 +16,6 @@ import TabIcon from './src/components/TabIcon';
 import { theme } from './src/theme';
 import { HomeScreenProvider } from './src/context/HomeScreenContext';
 import { UserProvider } from './src/context/UserContext';
-import { initializeWechatPay } from './src/api';
 
 interface AppContextType {
   activeTab: 'home' | 'group' | 'profile';
@@ -49,17 +48,6 @@ function AppContent(): React.JSX.Element {
   const [targetGroupId, setTargetGroupId] = useState<string | number | null>(null);
   const [targetGroupName, setTargetGroupName] = useState<string | null>(null);
   const [targetActivityId, setTargetActivityId] = useState<number | null>(null);
-
-  // 初始化微信支付服务
-  useEffect(() => {
-    initializeWechatPay().then((success) => {
-      if (success) {
-        console.log('[App] WeChat payment service initialized successfully');
-      } else {
-        console.warn('[App] Failed to initialize WeChat payment service');
-      }
-    });
-  }, []);
 
   const renderContent = () => {
     switch (activeTab) {

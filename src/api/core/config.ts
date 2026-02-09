@@ -16,7 +16,6 @@ export const API_SECRET = 'e2ffab74c3d1f8477a801a7377b66125';
 
 export const API_ENDPOINTS = {
   showSignup: 'api/core/show_signup',
-  getWechatPayParams: 'api/attend/userAttendInsurance',
   getMyGroups: 'api/app/group/list/my',
   getGroupByActivity: 'api/app/group/getByActivity',
   getGroupInfo: 'api/app/group/info',

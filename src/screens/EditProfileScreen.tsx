@@ -20,10 +20,9 @@ interface EditProfileScreenProps {
 }
 
 const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBackPress }) => {
-  const { user, updateUserProfile, bindWeChat, unbindWeChat } = useUserContext();
+  const { user, updateUserProfile } = useUserContext();
   const [editedNickname, setEditedNickname] = useState(user.nickname);
   const [editedPhone, setEditedPhone] = useState(user.phone);
-  const [isWeChatBound, setIsWeChatBound] = useState(user.isWeChatBound);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -51,35 +50,6 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBackPress }) =>
     }
   };
 
-  const handleWeChatBinding = () => {
-    if (isWeChatBound) {
-      Alert.alert('解绑微信', '确定要解绑微信吗？', [
-        { text: '取消', onPress: (_?: unknown) => {} },
-        {
-          text: '确定',
-          onPress: (_?: unknown) => {
-            unbindWeChat();
-            setIsWeChatBound(false);
-            Alert.alert('成功', '已解绑微信');
-          },
-        },
-      ]);
-    } else {
-      // 模拟微信绑定流程
-      Alert.alert('绑定微信', '即将跳转到微信绑定页面', [
-        { text: '取消', onPress: (_?: unknown) => {} },
-        {
-          text: '继续',
-          onPress: (_?: unknown) => {
-            // 模拟绑定成功
-            bindWeChat();
-            setIsWeChatBound(true);
-            Alert.alert('成功', '微信绑定成功');
-          },
-        },
-      ]);
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,37 +104,6 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBackPress }) =>
           />
         </View>
 
-        {/* WeChat Binding Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>微信绑定</Text>
-          <TouchableOpacity
-            style={styles.weChatItem}
-            onPress={handleWeChatBinding}
-          >
-            <View style={styles.weChatInfo}>
-              <Text style={styles.weChatLabel}>微信账号</Text>
-              <Text style={styles.weChatStatus}>
-                {isWeChatBound ? '已绑定' : '未绑定'}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.weChatButton,
-                isWeChatBound && styles.weChatButtonBound,
-              ]}
-              onPress={handleWeChatBinding}
-            >
-              <Text
-                style={[
-                  styles.weChatButtonText,
-                  isWeChatBound && styles.weChatButtonTextBound,
-                ]}
-              >
-                {isWeChatBound ? '已绑定' : '去绑定'}
-              </Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </View>
 
         {/* Save Button */}
         <TouchableOpacity
@@ -269,45 +208,6 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     color: theme.colors.text.secondary,
     textAlign: 'right',
-  },
-  weChatItem: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: theme.radius.sm,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  weChatInfo: {
-    flex: 1,
-  },
-  weChatLabel: {
-    ...theme.typography.body,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.xs,
-  },
-  weChatStatus: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.text.secondary,
-  },
-  weChatButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.sm,
-  },
-  weChatButtonBound: {
-    backgroundColor: '#E8E8E8',
-  },
-  weChatButtonText: {
-    ...theme.typography.bodySmallSemiBold,
-    color: '#fff',
-  },
-  weChatButtonTextBound: {
-    color: theme.colors.text.secondary,
   },
   saveButton: {
     paddingVertical: theme.spacing.lg,

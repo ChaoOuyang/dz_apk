@@ -29,32 +29,12 @@ export type {
   // 活动相关类型
   ActivitySignupParams,
   ActivitySignupResponse,
-  // 支付相关类型
-  WechatPayConfig,
-  WechatPayRequest,
-  WechatPayResult,
-  WechatPayParams,
-  WechatPayResponse,
-  WechatPayFlowConfig,
   // Coze 相关类型
   HistoryMessage,
   StreamCallback,
 } from './types';
 
 // ============ 服务层 ============
-
-// 微信支付服务
-export {
-  wechatPayService,
-  WechatPayService,
-  executeWechatPaymentFlow,
-  payForActivity,
-  getWechatPayParams,
-  handlePostPaymentGroupLogic,
-  initializeWechatPay,
-  isWechatPayInitialized,
-  getWechatAppId,
-} from './services/payment';
 
 // Coze 服务
 export { CozeApi } from './services/coze';
@@ -78,6 +58,4 @@ export {
   MOCK_DELAY_MS,
   ACTIVITY_SIGNUP_MOCK,
   getActivitySignupMock,
-  WECHAT_PAY_PARAMS_MOCK,
-  getWechatPayParamsMock,
 } from './mocks';

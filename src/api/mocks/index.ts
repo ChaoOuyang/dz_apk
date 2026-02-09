@@ -6,7 +6,6 @@
  */
 
 export { ACTIVITY_SIGNUP_MOCK, getActivitySignupMock } from './activitySignupMock';
-export { WECHAT_PAY_PARAMS_MOCK, getWechatPayParamsMock } from './wechatPayParamsMock';
 
 /**
  * 是否使用 Mock 数据

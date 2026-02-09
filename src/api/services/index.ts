@@ -5,8 +5,5 @@
  * 以避免导出重叠和混淆
  */
 
-// 支付服务（仅内部使用）
-export * from './payment';
-
 // 活动服务（仅内部使用）
 export * from './activity';
