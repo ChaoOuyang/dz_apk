@@ -1,5 +1,6 @@
 package com.dazhiyouqiu.app
 
+import android.util.Log
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -19,4 +20,14 @@ class MainActivity : ReactActivity() {
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+  
+  override fun onResume() {
+    super.onResume()
+    // 打印应用签名信息，用于微信集成调试
+    val sha1 = SignatureUtils.getSignatureSHA1(this)
+    val md5 = SignatureUtils.getSignatureMD5(this)
+    Log.d("WeChatDebug", "Package: ${packageName}")
+    Log.d("WeChatDebug", "SHA1: $sha1")
+    Log.d("WeChatDebug", "MD5: $md5")
+  }
 }
