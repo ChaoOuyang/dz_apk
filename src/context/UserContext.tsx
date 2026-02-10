@@ -9,8 +9,10 @@ export interface UserProfile {
 
 interface UserContextType {
   user: UserProfile;
+  token: string | null; // 微信登录后获得的 token
   setUser: (user: UserProfile | ((prev: UserProfile) => UserProfile)) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
+  setToken: (token: string | null) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ const defaultUser: UserProfile = {
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUserState] = useState<UserProfile>(defaultUser);
+  const [token, setTokenState] = useState<string | null>(null);
 
   const setUser = (userOrUpdater: UserProfile | ((prev: UserProfile) => UserProfile)) => {
     if (typeof userOrUpdater === 'function') {
@@ -41,11 +44,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }));
   };
 
+  const setToken = (newToken: string | null) => {
+    setTokenState(newToken);
+  };
 
   const value: UserContextType = {
     user,
+    token,
     setUser,
     updateUserProfile,
+    setToken,
   };
 
   return (

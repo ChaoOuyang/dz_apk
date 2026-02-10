@@ -21,6 +21,16 @@ export {
   getTimestamp,
 } from './core';
 
+// ============ Token 管理 ============
+export {
+  saveToken,
+  getToken,
+  hasValidToken,
+  removeToken,
+  clearAuth,
+  type TokenData,
+} from '../utils/tokenStorage';
+
 // ============ 类型定义 ============
 export type {
   // 通用类型
@@ -35,6 +45,13 @@ export type {
 } from './types';
 
 // ============ 服务层 ============
+
+// 微信登录服务
+export {
+  wechatLogin,
+  type WeChatLoginResponse,
+  type WeChatLoginParams,
+} from './services/wechat';
 
 // Coze 服务
 export { CozeApi } from './services/coze';

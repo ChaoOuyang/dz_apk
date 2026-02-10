@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   kickMember: 'api/app/group/member/kick',
   sendMessage: 'api/app/group/message/send',
   getMessages: 'api/app/group/message/list',
+  wechatLogin: 'api/app/login',
 };
 
 export const POST_ENDPOINTS = new Set<keyof typeof API_ENDPOINTS>([
@@ -31,6 +32,7 @@ export const POST_ENDPOINTS = new Set<keyof typeof API_ENDPOINTS>([
   'addMemberToGroup',
   'kickMember',
   'sendMessage',
+  'wechatLogin',
 ]);
 
 export const getApiUrl = (endpoint: keyof typeof API_ENDPOINTS): string =>

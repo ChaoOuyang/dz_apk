@@ -5,13 +5,16 @@
  * 
  * 【请求流程】
  * 1. buildRequestData() - 构建请求数据
- *    - 添加系统参数：rdsession、random、timestamp
+ *    - 添加系统参数：random、timestamp
  *    - 生成签名：基于所有参数的 MD5 哈希
- * 2. 构建请求体
+ * 2. 构建请求头
+ *    - 添加 token 到 header 中（如果有 token）
+ *    - 或使用 rdsession 到 header 中（向后兼容）
+ * 3. 构建请求体
  *    - POST JSON：JSON.stringify(requestData)
  *    - POST Form：application/x-www-form-urlencoded 编码
  *    - GET：参数添加到 URL 查询字符串
- * 3. 发送请求 - 设置 30 秒超时
+ * 4. 发送请求 - 设置 30 秒超时
  * 
  * 【响应流程】
  * 1. handleResponse() - 处理 API 响应
@@ -25,13 +28,14 @@
  * 【安全机制】
  * - 签名验证：防止参数篡改
  * - 时间戳验证：防重放攻击（5 分钟超时）
- * - Session 验证：确保用户身份
+ * - Token/Session 验证：确保用户身份（通过 header 传递）
  */
 
 import { API_BASE_URL, API_ENDPOINTS, POST_ENDPOINTS, FIXED_SESSION, API_SECRET } from './config';
 import { generateSignature, generateRandom, getTimestamp } from './signature';
 import { Alert } from 'react-native';
 import type { ApiResponse, RequestOptions } from '../types';
+import { getToken } from '../../utils/tokenStorage';
 
 /**
  * API 响应码定义
@@ -45,19 +49,19 @@ const RESPONSE_CODES = {
  * 构建完整的请求数据
  * 
  * 步骤：
- * 1. 添加必要的系统参数（session、random、timestamp）
+ * 1. 添加必要的系统参数（random、timestamp）
  * 2. 生成签名（基于上述所有参数 + API_SECRET 密钥）
  * 3. 返回完整的请求数据
  * 
  * 注意：
+ * - Token 放在请求头中，不在请求参数中
  * - 签名字段不参与签名计算本身
  * - secret 密钥只在签名计算时使用，不在请求参数中发送
  */
-function buildRequestData(data: Record<string, any>): Record<string, any> {
-  // 步骤 1: 构建包含系统参数的请求数据（不包含 secret）
+async function buildRequestData(data: Record<string, any>): Promise<Record<string, any>> {
+  // 步骤 1: 构建包含系统参数的请求数据（不包含 secret 和 token）
   const requestData: Record<string, any> = {
     ...data,
-    rdsession: FIXED_SESSION,
     random: generateRandom(),
     timestamp: getTimestamp(),
   };
@@ -132,11 +136,23 @@ export async function request<T = any>(
     headers: customHeaders = {},
   } = options;
 
-  const requestData = buildRequestData(data);
+  const requestData = await buildRequestData(data);
   const url = API_BASE_URL + API_ENDPOINTS[endpoint];
   const method = isPost ? 'POST' : 'GET';
   const contentType = isFormEncoded ? 'application/x-www-form-urlencoded' : 'application/json';
+  
+  // 构建请求头，包含 token 认证
   const headers: Record<string, string> = { 'Content-Type': contentType, ...customHeaders };
+  
+  // 获取 token 并添加到请求头中
+  const token = await getToken();
+  if (token) {
+    headers['token'] = token;
+    console.log('🔐 [Auth] Using token in header for authentication');
+  } else {
+    headers['rdsession'] = FIXED_SESSION;
+    console.log('🔐 [Auth] Using rdsession in header for authentication');
+  }
   
   console.log('🌐 [API Request]', { endpoint, method, url });
 

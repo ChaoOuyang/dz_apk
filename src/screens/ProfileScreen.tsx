@@ -10,19 +10,22 @@ import {
   Image,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import * as WeChat from 'react-native-wechat-lib';
 import { theme } from '../theme';
 import { useUserContext } from '../context/UserContext';
 import { useAppContext } from '../../App';
 import EditProfileScreen from './EditProfileScreen';
-import { printSignatureDebugInfo } from '../utils/signatureUtils';
+import { wechatLogin } from '../api/services/wechat';
+import { saveToken } from '../utils/tokenStorage';
 
 const ProfileScreen = () => {
-  const { user, updateUserProfile } = useUserContext();
+  const { user, updateUserProfile, setToken } = useUserContext();
   const { setShowTabBar } = useAppContext();
   const [showEditModal, setShowEditModal] = useState(false);
   const [isWeChatInstalled, setIsWeChatInstalled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // 初始化微信 SDK
   useEffect(() => {
@@ -43,29 +46,15 @@ const ProfileScreen = () => {
   // 初始化微信 SDK
   const initWeChat = async () => {
     try {
-      // 打印签名信息用于调试
-      if (Platform.OS === 'android') {
-        console.log('开始获取应用签名信息...');
-        await printSignatureDebugInfo();
-      }
-      
       // 注册微信 AppID
-      // 重要：signature 是根据应用包名和签名生成的，用于验证应用身份
       const appId = 'wx46279c0318624f78';
-      
-      // 使用 registerApp 注册应用
-      // 第二个参数是 Universal Link (iOS) 或 App Link (Android)
       await WeChat.registerApp(appId, 'https://your-universal-link.com/');
-      
-      console.log('微信 SDK 已注册');
       
       // 检查微信是否安装
       const installed = await WeChat.isWXAppInstalled();
-      console.log('微信安装状态:', installed);
       setIsWeChatInstalled(installed);
     } catch (error) {
       console.error('微信初始化失败:', error);
-      // 不弹出alert，允许用户继续使用应用
       setIsWeChatInstalled(false);
     }
   };
@@ -78,31 +67,45 @@ const ProfileScreen = () => {
         return;
       }
 
+      setIsLoading(true);
+
       // 发起微信授权登录请求
       const result = await WeChat.sendAuthRequest('snsapi_userinfo', 'wechat_login');
       
       // 处理授权回调
       if (result && result.code) {
-        // 在实际应用中，需要将 code 发送到后端服务器
-        // 后端通过 code 换取 access_token 和用户信息
-        console.log('微信授权 code:', result.code);
+        console.log('🔐 微信授权 code:', result.code);
         
-        // 模拟登录成功，更新用户信息
-        updateUserProfile({
-          nickname: '微信用户',
-          avatar: 'https://via.placeholder.com/150/07C160/FFFFFF?text=WeChat',
-        });
-        
-        Alert.alert('成功', '微信登录成功！');
+        try {
+           // 使用 code 向后端服务器交换 token
+           // 后端会验证 code，交换用户信息，并返回 token
+           const loginResponse = await wechatLogin(result.code);
+           
+           // 保存 token 到本地存储（后端 Redis 中存储 30 天自动过期）
+           await saveToken(loginResponse.token);
+           
+           // 更新 Context 中的 token
+           setToken(loginResponse.token);
+           
+           // 注意：后端只返回 token，不返回用户信息
+           // 用户可以在需要时通过 token 调用其他 API 获取用户信息
+           
+           Alert.alert('成功', '微信登录成功！');
+         } catch (backendError: any) {
+           console.error('❌ 后端登录失败:', backendError);
+           Alert.alert('错误', backendError.message || '登录失败，请重试');
+         }
       }
     } catch (error: any) {
-      console.error('微信登录失败:', error);
+      console.error('❌ 微信登录失败:', error);
       if (error.errCode === -2) {
         // 用户取消
         Alert.alert('提示', '用户取消授权');
       } else {
         Alert.alert('错误', '微信登录失败：' + (error.message || '未知错误'));
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -145,16 +148,28 @@ const ProfileScreen = () => {
         {/* WeChat Login Section */}
         <View style={styles.wechatSection}>
           <TouchableOpacity 
-            style={styles.wechatButton}
+            style={[
+              styles.wechatButton,
+              (!isWeChatInstalled || isLoading) && styles.wechatButtonDisabled,
+            ]}
             onPress={handleWeChatLogin}
-            disabled={!isWeChatInstalled}
+            disabled={!isWeChatInstalled || isLoading}
           >
-            <View style={styles.wechatIcon}>
-              <Text style={styles.wechatIconText}>微</Text>
-            </View>
-            <Text style={styles.wechatButtonText}>
-              {isWeChatInstalled ? '微信登录' : '未安装微信'}
-            </Text>
+            {isLoading ? (
+              <>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={styles.wechatButtonText}>登录中...</Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.wechatIcon}>
+                  <Text style={styles.wechatIconText}>微</Text>
+                </View>
+                <Text style={styles.wechatButtonText}>
+                  {isWeChatInstalled ? '微信登录' : '未安装微信'}
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -260,7 +275,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#07C160',
+    backgroundColor: theme.colors.primary,
     paddingVertical: theme.spacing.md,
     borderRadius: theme.radius.lg,
     shadowColor: '#000',
@@ -268,6 +283,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  wechatButtonDisabled: {
+    backgroundColor: '#ccc',
+    opacity: 0.6,
   },
   wechatIcon: {
     width: 24,
@@ -281,7 +300,7 @@ const styles = StyleSheet.create({
   wechatIconText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#07C160',
+    color: theme.colors.primary,
   },
   wechatButtonText: {
     ...theme.typography.body,
