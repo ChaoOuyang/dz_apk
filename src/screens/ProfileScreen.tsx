@@ -12,7 +12,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import * as WeChat from 'react-native-wechat-lib';
+import * as WeChat from '../wechat/js';
 import { theme } from '../theme';
 import { useUserContext } from '../context/UserContext';
 import { useAppContext } from '../../App';
